@@ -225,7 +225,7 @@ const ClassRegister = () => {
           </div>
         ) : (
           <>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {students.map((student) => {
                 const percent = calculateAttendancePercentage(student.attendance);
                 const absent = absentIds.has(student.id);
