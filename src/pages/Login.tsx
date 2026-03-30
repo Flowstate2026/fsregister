@@ -49,19 +49,19 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-10 text-center">
-          <h1 className="font-display text-4xl font-extrabold tracking-tight text-foreground">FS Register</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {mode === "login" ? "Sign in to your school account" : "Create your demo account"}
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="w-full max-w-xs animate-fade-in">
+        <div className="mb-12 text-center">
+          <h1 className="font-display text-3xl font-bold text-foreground">FS Register</h1>
+          <p className="mt-3 text-xs text-muted-foreground tracking-wide">
+            {mode === "login" ? "Sign in to your account" : "Create your demo account"}
           </p>
         </div>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-4">
+        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-5">
           {mode === "signup" && (
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName" className="text-xs font-normal text-muted-foreground uppercase tracking-wider">Full Name</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -69,12 +69,13 @@ const Login = () => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
+                className="border-border/60 bg-card"
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-xs font-normal text-muted-foreground uppercase tracking-wider">Email</Label>
             <Input
               id="email"
               type="email"
@@ -83,11 +84,12 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="border-border/60 bg-card"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-xs font-normal text-muted-foreground uppercase tracking-wider">Password</Label>
             <Input
               id="password"
               type="password"
@@ -97,10 +99,11 @@ const Login = () => {
               required
               minLength={6}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
+              className="border-border/60 bg-card"
             />
           </div>
 
-          {error && <p className="text-sm text-risk">{error}</p>}
+          {error && <p className="text-xs text-risk">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
@@ -109,11 +112,11 @@ const Login = () => {
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <button
             type="button"
             onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {mode === "login"
               ? "Need a demo account? Sign up"
@@ -122,7 +125,7 @@ const Login = () => {
         </div>
 
         {mode === "signup" && (
-          <p className="mt-3 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-[11px] text-muted-foreground">
             You'll be added as an owner of Starlight Performing Arts (demo school)
           </p>
         )}

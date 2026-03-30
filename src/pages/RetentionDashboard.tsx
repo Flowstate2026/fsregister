@@ -2,14 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
-import StudentIndicators from "@/components/StudentIndicators";
 import {
   isNewStudent,
   needsNote as checkNeedsNote,
   calculateAttendancePercentage,
   isAtRisk,
 } from "@/lib/student-utils";
-import { Star, AlertTriangle, AlertCircle } from "lucide-react";
+import { Star, AlertTriangle, PenLine } from "lucide-react";
 
 const RetentionDashboard = () => {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ const RetentionDashboard = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["retention-dashboard"],
     queryFn: async () => {
-      // Get all active students with their enrollments
       const { data: students, error } = await supabase
         .from("students")
         .select("*, class_enrollments(*, classes(name))")
@@ -78,8 +76,8 @@ const RetentionDashboard = () => {
     },
     {
       title: "Needs Attention",
-      icon: AlertCircle,
-      iconClass: "text-warning",
+      icon: PenLine,
+      iconClass: "text-accent",
       items: data?.needsAttention || [],
       metric: () => "No note in 90+ days",
     },
@@ -88,35 +86,35 @@ const RetentionDashboard = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="mb-8">
-          <h2 className="font-display text-3xl font-extrabold text-foreground">
+        <div className="mb-10">
+          <h2 className="font-display text-2xl font-bold text-foreground">
             Retention Dashboard
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Overview across all classes</p>
+          <p className="mt-1.5 text-xs text-muted-foreground tracking-wide">Overview across all classes</p>
         </div>
 
         {isLoading ? (
           <div className="space-y-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-36 animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="h-32 animate-pulse rounded-2xl bg-muted/40" />
             ))}
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-12">
             {sections.map((section) => (
               <section key={section.title}>
-                <div className="mb-4 flex items-center gap-2">
-                  <section.icon className={`h-5 w-5 ${section.iconClass}`} />
-                  <h3 className="font-display text-xl font-bold text-foreground">
+                <div className="mb-4 flex items-center gap-2.5">
+                  <section.icon className={`h-4 w-4 ${section.iconClass}`} />
+                  <h3 className="font-display text-base font-semibold text-foreground">
                     {section.title}
                   </h3>
-                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {section.items.length}
                   </span>
                 </div>
 
                 {section.items.length === 0 ? (
-                  <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground shadow-[var(--shadow-card)]">
+                  <p className="rounded-2xl border border-border/60 bg-card px-5 py-5 text-xs text-muted-foreground shadow-[var(--shadow-card)]">
                     No students in this category
                   </p>
                 ) : (
@@ -125,17 +123,17 @@ const RetentionDashboard = () => {
                       <button
                         key={student.id}
                         onClick={() => navigate(`/student/${student.id}`)}
-                        className="flex w-full items-center justify-between rounded-xl border bg-card p-4 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.99]"
+                        className="flex w-full items-center justify-between rounded-2xl border border-border/60 bg-card px-5 py-4 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
                       >
                         <div>
-                          <span className="font-semibold text-foreground">
+                          <span className="text-sm font-medium text-foreground">
                             {student.first_name} {student.last_name}
                           </span>
-                          <span className="ml-2 text-sm text-muted-foreground">
+                          <span className="ml-2 text-xs text-muted-foreground">
                             {student.className}
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[11px] text-muted-foreground">
                           {section.metric(student)}
                         </span>
                       </button>
