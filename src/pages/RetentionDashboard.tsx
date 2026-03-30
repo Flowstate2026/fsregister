@@ -88,47 +88,47 @@ const RetentionDashboard = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="mb-6">
-          <h2 className="font-display text-2xl font-bold text-foreground">
+        <div className="mb-8">
+          <h2 className="font-display text-3xl font-extrabold text-foreground">
             Retention Dashboard
           </h2>
-          <p className="text-sm text-muted-foreground">Overview across all classes</p>
+          <p className="mt-1 text-sm text-muted-foreground">Overview across all classes</p>
         </div>
 
         {isLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-lg bg-muted" />
+              <div key={i} className="h-36 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {sections.map((section) => (
               <section key={section.title}>
-                <div className="mb-3 flex items-center gap-2">
+                <div className="mb-4 flex items-center gap-2">
                   <section.icon className={`h-5 w-5 ${section.iconClass}`} />
-                  <h3 className="font-display text-lg font-semibold text-foreground">
+                  <h3 className="font-display text-xl font-bold text-foreground">
                     {section.title}
                   </h3>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                     {section.items.length}
                   </span>
                 </div>
 
                 {section.items.length === 0 ? (
-                  <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                  <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground shadow-[var(--shadow-card)]">
                     No students in this category
                   </p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {section.items.map((student: any) => (
                       <button
                         key={student.id}
                         onClick={() => navigate(`/student/${student.id}`)}
-                        className="flex w-full items-center justify-between rounded-lg border bg-card p-3 text-left transition-colors hover:bg-accent/50 active:bg-accent"
+                        className="flex w-full items-center justify-between rounded-xl border bg-card p-4 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.99]"
                       >
                         <div>
-                          <span className="font-medium text-foreground">
+                          <span className="font-semibold text-foreground">
                             {student.first_name} {student.last_name}
                           </span>
                           <span className="ml-2 text-sm text-muted-foreground">

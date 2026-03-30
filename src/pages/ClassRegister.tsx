@@ -233,7 +233,7 @@ const ClassRegister = () => {
                 return (
                   <div
                     key={student.id}
-                    className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                    className={`flex w-full items-center justify-between rounded-xl border p-4 text-left shadow-[var(--shadow-card)] transition-all ${
                       absent
                         ? "border-risk/30 bg-risk/5"
                         : "border-border bg-card"

@@ -249,9 +249,9 @@ const StudentProfile = () => {
         </section>
 
         {/* Notes */}
-        <section className="mb-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Notes
             </h3>
             <Button
@@ -265,7 +265,7 @@ const StudentProfile = () => {
           </div>
 
           {showNoteForm && (
-            <div className="mb-4 rounded-lg border bg-card p-4">
+            <div className="mb-4 rounded-xl border bg-card p-5 shadow-[var(--shadow-card)]">
               <Textarea
                 placeholder="Write a note about this student…"
                 value={noteText}
@@ -292,11 +292,11 @@ const StudentProfile = () => {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {notes?.map((note) => (
-              <div key={note.id} className="rounded-lg border bg-card p-3">
+              <div key={note.id} className="rounded-xl border bg-card p-4 shadow-[var(--shadow-card)]">
                 <p className="text-sm text-foreground">{note.note_text}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                   {(note as any).author_name ?? "Unknown teacher"} · {format(new Date(note.created_at), "d MMM yyyy")}
                 </p>
               </div>
