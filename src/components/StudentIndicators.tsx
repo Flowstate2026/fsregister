@@ -1,4 +1,4 @@
-import { Star, AlertTriangle, AlertCircle } from "lucide-react";
+import { Star, AlertTriangle, PenLine } from "lucide-react";
 
 interface StudentIndicatorsProps {
   isNew: boolean;
