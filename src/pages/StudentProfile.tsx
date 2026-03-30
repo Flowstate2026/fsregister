@@ -22,7 +22,7 @@ import { toast } from "sonner";
 const StudentProfile = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [noteText, setNoteText] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
@@ -68,29 +68,72 @@ const StudentProfile = () => {
   const { data: notes } = useQuery({
     queryKey: ["student-notes", studentId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: noteRows, error: notesError } = await supabase
         .from("student_notes")
-        .select("*, profiles:author_id(full_name)")
+        .select("*")
         .eq("student_id", studentId!)
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+
+      if (notesError) throw notesError;
+      if (!noteRows?.length) return [];
+
+      const authorIds = [...new Set(noteRows.map((note) => note.author_id))];
+      const { data: profileRows, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", authorIds);
+
+      if (profilesError) throw profilesError;
+
+      const namesByAuthor = new Map(
+        (profileRows || []).map((author) => [author.user_id, author.full_name])
+      );
+
+      return noteRows.map((note) => ({
+        ...note,
+        author_name: namesByAuthor.get(note.author_id) || null,
+      }));
     },
   });
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
-      if (!noteText.trim() || !user) throw new Error("Missing note text or user");
-      const { error } = await supabase.from("student_notes").insert({
-        student_id: studentId!,
-        author_id: user.id,
-        note_text: noteText.trim(),
-      });
+      const trimmedNote = noteText.trim();
+      if (!trimmedNote || !user || !studentId) {
+        throw new Error("Missing note text or user");
+      }
+
+      const { data, error } = await supabase
+        .from("student_notes")
+        .insert({
+          student_id: studentId,
+          author_id: user.id,
+          note_text: trimmedNote,
+        })
+        .select("*")
+        .single();
+
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (newNote) => {
       setNoteText("");
       setShowNoteForm(false);
+
+      queryClient.setQueryData(["student-notes", studentId], (current: any[] | undefined) => {
+        const next = [
+          {
+            ...newNote,
+            author_name: profile?.full_name || "You",
+          },
+          ...(current || []),
+        ];
+
+        return next.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      });
+
       queryClient.invalidateQueries({ queryKey: ["student-notes", studentId] });
       toast.success("Note added");
     },
@@ -254,7 +297,7 @@ const StudentProfile = () => {
               <div key={note.id} className="rounded-lg border bg-card p-3">
                 <p className="text-sm text-foreground">{note.note_text}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {(note.profiles as any)?.full_name} · {format(new Date(note.created_at), "d MMM yyyy")}
+                  {(note as any).author_name ?? "Unknown teacher"} · {format(new Date(note.created_at), "d MMM yyyy")}
                 </p>
               </div>
             ))}
