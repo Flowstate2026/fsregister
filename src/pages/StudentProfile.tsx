@@ -162,18 +162,18 @@ const StudentProfile = () => {
       <div className="animate-fade-in">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-5 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
         {/* Student header */}
-        <div className="mb-6 flex items-start justify-between">
+        <div className="mb-8 flex items-start justify-between">
           <div>
-            <h2 className="font-display text-2xl font-bold text-foreground">
+            <h2 className="font-display text-3xl font-extrabold text-foreground">
               {student.first_name} {student.last_name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               Joined {format(parseISO(student.join_date), "d MMM yyyy")}
             </p>
             {student.parent_email && (
@@ -191,14 +191,14 @@ const StudentProfile = () => {
         </div>
 
         {/* Enrolled classes */}
-        <section className="mb-6">
-          <h3 className="mb-2 font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <section className="mb-8">
+          <h3 className="mb-3 font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Enrolled Classes
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {enrollments?.map((e) => (
-              <div key={e.id} className="rounded-lg border bg-card p-3 text-sm">
-                <span className="font-medium text-foreground">{(e.classes as any)?.name}</span>
+              <div key={e.id} className="rounded-xl border bg-card p-4 text-sm shadow-[var(--shadow-card)]">
+                <span className="font-semibold text-foreground">{(e.classes as any)?.name}</span>
                 <span className="ml-2 text-muted-foreground">
                   {getDayName((e.classes as any)?.day_of_week)} · {formatTime((e.classes as any)?.time_of_day)}
                 </span>
@@ -211,15 +211,15 @@ const StudentProfile = () => {
         </section>
 
         {/* Attendance history */}
-        <section className="mb-6">
-          <h3 className="mb-2 font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <section className="mb-8">
+          <h3 className="mb-3 font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Attendance History
           </h3>
-          <div className="space-y-1">
+          <div className="space-y-2">
             {attendance?.slice(0, 20).map((record) => (
               <div
                 key={record.id}
-                className="flex items-center justify-between rounded-lg border bg-card px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 text-sm shadow-[var(--shadow-card)]"
               >
                 <div>
                   <span className="text-foreground">
@@ -249,9 +249,9 @@ const StudentProfile = () => {
         </section>
 
         {/* Notes */}
-        <section className="mb-6">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Notes
             </h3>
             <Button
@@ -265,7 +265,7 @@ const StudentProfile = () => {
           </div>
 
           {showNoteForm && (
-            <div className="mb-4 rounded-lg border bg-card p-4">
+            <div className="mb-4 rounded-xl border bg-card p-5 shadow-[var(--shadow-card)]">
               <Textarea
                 placeholder="Write a note about this student…"
                 value={noteText}
@@ -292,11 +292,11 @@ const StudentProfile = () => {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {notes?.map((note) => (
-              <div key={note.id} className="rounded-lg border bg-card p-3">
+              <div key={note.id} className="rounded-xl border bg-card p-4 shadow-[var(--shadow-card)]">
                 <p className="text-sm text-foreground">{note.note_text}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                   {(note as any).author_name ?? "Unknown teacher"} · {format(new Date(note.created_at), "d MMM yyyy")}
                 </p>
               </div>

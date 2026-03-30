@@ -183,17 +183,17 @@ const ClassRegister = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="mb-6">
+        <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <h2 className="font-display text-2xl font-bold text-foreground">
+          <h2 className="font-display text-3xl font-extrabold text-foreground">
             {classInfo?.name || "Class Register"}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {classInfo && formatTime(classInfo.time_of_day)} · {format(new Date(), "d MMM yyyy")}
           </p>
         </div>
@@ -225,7 +225,7 @@ const ClassRegister = () => {
           </div>
         ) : (
           <>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {students.map((student) => {
                 const percent = calculateAttendancePercentage(student.attendance);
                 const absent = absentIds.has(student.id);
@@ -233,7 +233,7 @@ const ClassRegister = () => {
                 return (
                   <div
                     key={student.id}
-                    className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                    className={`flex w-full items-center justify-between rounded-xl border p-4 text-left shadow-[var(--shadow-card)] transition-all ${
                       absent
                         ? "border-risk/30 bg-risk/5"
                         : "border-border bg-card"

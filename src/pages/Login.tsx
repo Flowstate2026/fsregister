@@ -51,9 +51,9 @@ const Login = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-3xl font-bold text-foreground">FS Register</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <div className="mb-10 text-center">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight text-foreground">FS Register</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
             {mode === "login" ? "Sign in to your school account" : "Create your demo account"}
           </p>
         </div>
