@@ -24,43 +24,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const ensureProfileExists = async (currentUser: User) => {
+    const schoolId = currentUser.user_metadata?.school_id as string | undefined;
+
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (existingProfile || !schoolId) return;
+
+    const fullName =
+      (currentUser.user_metadata?.full_name as string | undefined)?.trim() ||
+      currentUser.email ||
+      "Teacher";
+
+    const { error: insertError } = await supabase.from("profiles").insert({
+      user_id: currentUser.id,
+      full_name: fullName,
+      email: currentUser.email || "",
+      school_id: schoolId,
+    });
+
+    if (insertError) throw insertError;
+  };
+
+  const fetchProfile = async (currentUser: User) => {
+    await ensureProfileExists(currentUser);
+
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", userId)
-      .single();
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
     setProfile(profileData);
 
     const { data: rolesData } = await supabase
       .from("user_roles")
       .select("*")
-      .eq("user_id", userId);
+      .eq("user_id", currentUser.id);
     setRoles(rolesData || []);
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          // Use setTimeout to avoid potential deadlock with Supabase auth
-          setTimeout(() => fetchProfile(currentUser.id), 0);
-        } else {
-          setProfile(null);
-          setRoles([]);
-        }
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        fetchProfile(currentUser.id);
+
+      try {
+        if (currentUser) {
+          setTimeout(() => {
+            fetchProfile(currentUser).finally(() => setLoading(false));
+          }, 0);
+          return;
+        }
+
+        setProfile(null);
+        setRoles([]);
+      } finally {
+        if (!currentUser) setLoading(false);
       }
+    });
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        await fetchProfile(currentUser);
+      }
+
       setLoading(false);
     });
 
