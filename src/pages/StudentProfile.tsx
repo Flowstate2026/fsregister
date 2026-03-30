@@ -94,8 +94,8 @@ const StudentProfile = () => {
       queryClient.invalidateQueries({ queryKey: ["student-notes", studentId] });
       toast.success("Note added");
     },
-    onError: () => {
-      toast.error("Failed to add note");
+    onError: (err) => {
+      toast.error("Failed to add note: " + (err as Error).message);
     },
   });
 
