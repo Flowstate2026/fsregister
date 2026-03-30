@@ -162,18 +162,18 @@ const StudentProfile = () => {
       <div className="animate-fade-in">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-5 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
         {/* Student header */}
-        <div className="mb-6 flex items-start justify-between">
+        <div className="mb-8 flex items-start justify-between">
           <div>
-            <h2 className="font-display text-2xl font-bold text-foreground">
+            <h2 className="font-display text-3xl font-extrabold text-foreground">
               {student.first_name} {student.last_name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               Joined {format(parseISO(student.join_date), "d MMM yyyy")}
             </p>
             {student.parent_email && (
@@ -191,14 +191,14 @@ const StudentProfile = () => {
         </div>
 
         {/* Enrolled classes */}
-        <section className="mb-6">
-          <h3 className="mb-2 font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <section className="mb-8">
+          <h3 className="mb-3 font-display text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Enrolled Classes
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {enrollments?.map((e) => (
-              <div key={e.id} className="rounded-lg border bg-card p-3 text-sm">
-                <span className="font-medium text-foreground">{(e.classes as any)?.name}</span>
+              <div key={e.id} className="rounded-xl border bg-card p-4 text-sm shadow-[var(--shadow-card)]">
+                <span className="font-semibold text-foreground">{(e.classes as any)?.name}</span>
                 <span className="ml-2 text-muted-foreground">
                   {getDayName((e.classes as any)?.day_of_week)} · {formatTime((e.classes as any)?.time_of_day)}
                 </span>
