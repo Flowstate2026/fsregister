@@ -183,17 +183,17 @@ const ClassRegister = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="mb-6">
+        <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <h2 className="font-display text-2xl font-bold text-foreground">
+          <h2 className="font-display text-3xl font-extrabold text-foreground">
             {classInfo?.name || "Class Register"}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {classInfo && formatTime(classInfo.time_of_day)} · {format(new Date(), "d MMM yyyy")}
           </p>
         </div>
