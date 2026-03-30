@@ -80,7 +80,7 @@ const StudentProfile = () => {
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
-      if (!noteText.trim() || !user) return;
+      if (!noteText.trim() || !user) throw new Error("Missing note text or user");
       const { error } = await supabase.from("student_notes").insert({
         student_id: studentId!,
         author_id: user.id,
@@ -94,8 +94,8 @@ const StudentProfile = () => {
       queryClient.invalidateQueries({ queryKey: ["student-notes", studentId] });
       toast.success("Note added");
     },
-    onError: () => {
-      toast.error("Failed to add note");
+    onError: (err) => {
+      toast.error("Failed to add note: " + (err as Error).message);
     },
   });
 

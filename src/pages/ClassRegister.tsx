@@ -186,17 +186,18 @@ const ClassRegister = () => {
                       >
                         {absent ? "A" : <Check className="h-4 w-4" />}
                       </div>
-                      <button
+                      <span
+                        role="link"
+                        tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           navigate(`/student/${student.id}`);
                         }}
-                        className="text-left hover:underline"
+                        className="text-left hover:underline cursor-pointer font-medium text-foreground"
                       >
-                        <span className="font-medium text-foreground">
-                          {student.first_name} {student.last_name}
-                        </span>
-                      </button>
+                        {student.first_name} {student.last_name}
+                      </span>
                     </div>
                     <StudentIndicators
                       isNew={isNewStudent(student.join_date)}
