@@ -14,7 +14,7 @@ const StudentIndicators = ({ isNew, needsNote, isAtRisk, attendancePercent }: St
         <Star className="h-4 w-4 fill-star text-star" aria-label="New student" />
       )}
       {needsNote && (
-        <AlertCircle className="h-4 w-4 text-warning" aria-label="Needs note" />
+        <PenLine className="h-4 w-4 text-warning" aria-label="Needs note" />
       )}
       {isAtRisk && (
         <AlertTriangle className="h-4 w-4 text-risk" aria-label="At risk" />
