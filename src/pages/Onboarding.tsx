@@ -91,7 +91,6 @@ export default function Onboarding() {
     if (!schoolId) return;
     setLoading(true);
     try {
-      // Upload logo if present
       let logoUrl: string | null = null;
       if (logoFile) {
         const ext = logoFile.name.split(".").pop();
@@ -106,14 +105,16 @@ export default function Onboarding() {
         logoUrl = publicData.publicUrl;
       }
 
-      // Update school name + logo
       const updates: Record<string, string> = {};
       if (schoolName.trim()) updates.name = schoolName.trim();
       if (logoUrl) updates.logo_url = logoUrl;
 
       if (Object.keys(updates).length > 0) {
-        // Use edge function to update school since users can't UPDATE schools table
-        // For now just move on — school was already created with name
+        const { error } = await supabase
+          .from("schools")
+          .update(updates)
+          .eq("id", schoolId);
+        if (error) throw error;
       }
 
       setStep(2);
@@ -333,6 +334,16 @@ export default function Onboarding() {
                     <li>FS Register does not sell, share, or use personal data for marketing or any purpose beyond the agreed service.</li>
                     <li>Parents and students have the right to access, rectify, and request deletion of their personal data through the school.</li>
                   </ul>
+
+                  <div className="mt-4 pt-4 border-t border-border/30 space-y-3">
+                    <p className="font-medium text-foreground">Important notices</p>
+                    <div className="space-y-2">
+                      <p className="text-xs"><span className="font-medium text-foreground">Children's data:</span> FS Register processes personal data of children. Under UK GDPR / GDPR Article 8, you must ensure you have appropriate parental consent or a lawful basis (such as legitimate interest) documented before sharing children's data with FS Register.</p>
+                      <p className="text-xs"><span className="font-medium text-foreground">Sub-processors:</span> FS Register uses Lovable Cloud (hosted infrastructure) and Supabase (database and authentication) as sub-processors. Both are GDPR-compliant and process data within the EU/UK region.</p>
+                      <p className="text-xs"><span className="font-medium text-foreground">Data location:</span> All data is stored and processed within the European Union and United Kingdom.</p>
+                      <p className="text-xs"><span className="font-medium text-foreground">Breach notification:</span> In the event of a personal data breach, FS Register will notify affected schools within 72 hours as required by GDPR Article 33.</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
