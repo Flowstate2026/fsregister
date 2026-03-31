@@ -10,6 +10,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const ownerNav = [
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
+    { path: "/owner-students", icon: Users, label: "Students" },
     { path: "/dashboard", icon: BarChart3, label: "Dashboard" },
     { path: "/settings", icon: Settings, label: "Settings" },
   ];
