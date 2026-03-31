@@ -8,9 +8,11 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
 
 const STEPS = [
+  { label: "GDPR", icon: ShieldCheck },
   { label: "School Details", icon: School },
   { label: "First Class", icon: GraduationCap },
   { label: "Invite Teacher", icon: Users },
