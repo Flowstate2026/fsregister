@@ -123,7 +123,9 @@ const OwnerStudents = () => {
     setShowForm(false);
     setFirstName("");
     setLastName("");
-    setDob(undefined);
+    setDobDay("");
+    setDobMonth("");
+    setDobYear("");
     setJoinDate(new Date());
     setParentEmail("");
     setSelectedClassIds([]);
