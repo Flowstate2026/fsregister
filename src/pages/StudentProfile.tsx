@@ -15,7 +15,7 @@ import { toast } from "sonner";
 const StudentProfile = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isOwner } = useAuth();
   const queryClient = useQueryClient();
   const [noteText, setNoteText] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
