@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import { Select as SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   isNewStudent,
@@ -212,7 +212,7 @@ const OwnerStudents = () => {
                     Date of Birth
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    <SelectRoot
+                    <Select
                       value={dobDay}
                       onValueChange={setDobDay}
                     >
@@ -224,8 +224,8 @@ const OwnerStudents = () => {
                           <SelectItem key={d} value={String(d)}>{d}</SelectItem>
                         ))}
                       </SelectContent>
-                    </SelectRoot>
-                    <SelectRoot
+                    </Select>
+                    <Select
                       value={dobMonth}
                       onValueChange={setDobMonth}
                     >
@@ -237,8 +237,8 @@ const OwnerStudents = () => {
                           <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
                         ))}
                       </SelectContent>
-                    </SelectRoot>
-                    <SelectRoot
+                    </Select>
+                    <Select
                       value={dobYear}
                       onValueChange={setDobYear}
                     >
@@ -250,7 +250,7 @@ const OwnerStudents = () => {
                           <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                         ))}
                       </SelectContent>
-                    </SelectRoot>
+                    </Select>
                   </div>
                 </div>
                 <div>
