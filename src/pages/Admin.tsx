@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Admin = () => {
+  const navigate = useNavigate();
   const [adminPassword, setAdminPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [schoolName, setSchoolName] = useState("");
