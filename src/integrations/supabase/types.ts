@@ -169,18 +169,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          logo_url: string | null
           name: string
           slug: string
         }
         Insert: {
           created_at?: string
           id?: string
+          logo_url?: string | null
           name: string
           slug: string
         }
         Update: {
           created_at?: string
           id?: string
+          logo_url?: string | null
           name?: string
           slug?: string
         }
@@ -261,6 +264,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teacher_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          invited_by: string
+          school_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          invited_by: string
+          school_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          invited_by?: string
+          school_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
