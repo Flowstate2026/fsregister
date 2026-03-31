@@ -9,6 +9,7 @@ import ClassRegister from "./pages/ClassRegister";
 import StudentProfile from "./pages/StudentProfile";
 import AllClasses from "./pages/AllClasses";
 import RetentionDashboard from "./pages/RetentionDashboard";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/register/:classId" element={<ProtectedRoute><ClassRegister /></ProtectedRoute>} />
             <Route path="/student/:studentId" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RetentionDashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
