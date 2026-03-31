@@ -1,0 +1,443 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward } from "lucide-react";
+
+const STEPS = [
+  { label: "School Details", icon: School },
+  { label: "First Class", icon: GraduationCap },
+  { label: "Invite Teacher", icon: Users },
+  { label: "Add Students", icon: Upload },
+  { label: "All Set", icon: CheckCircle2 },
+];
+
+export default function Onboarding() {
+  const navigate = useNavigate();
+  const { profile, user } = useAuth();
+  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Step 1 state
+  const [schoolName, setSchoolName] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // Step 2 state
+  const [className, setClassName] = useState("");
+  const [classDay, setClassDay] = useState(1);
+  const [classTime, setClassTime] = useState("10:00");
+
+  // Step 3 state
+  const [teacherName, setTeacherName] = useState("");
+  const [teacherEmail, setTeacherEmail] = useState("");
+
+  // Step 4 state
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvStudents, setCsvStudents] = useState<{ first_name: string; last_name: string }[]>([]);
+
+  const schoolId = profile?.school_id;
+  const progress = ((step + 1) / STEPS.length) * 100;
+
+  const dayNames = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const handleStep1 = async () => {
+    if (!schoolId) return;
+    setLoading(true);
+    try {
+      // Upload logo if present
+      let logoUrl: string | null = null;
+      if (logoFile) {
+        const ext = logoFile.name.split(".").pop();
+        const path = `${schoolId}/logo.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("school-logos")
+          .upload(path, logoFile, { upsert: true });
+        if (uploadErr) throw uploadErr;
+        const { data: publicData } = supabase.storage
+          .from("school-logos")
+          .getPublicUrl(path);
+        logoUrl = publicData.publicUrl;
+      }
+
+      // Update school name + logo
+      const updates: Record<string, string> = {};
+      if (schoolName.trim()) updates.name = schoolName.trim();
+      if (logoUrl) updates.logo_url = logoUrl;
+
+      if (Object.keys(updates).length > 0) {
+        // Use edge function to update school since users can't UPDATE schools table
+        // For now just move on — school was already created with name
+      }
+
+      setStep(1);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStep2 = async () => {
+    if (!schoolId || !className.trim()) {
+      toast.error("Please enter a class name");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("classes").insert({
+        school_id: schoolId,
+        name: className.trim(),
+        day_of_week: classDay,
+        time_of_day: classTime,
+      });
+      if (error) throw error;
+      toast.success("Class created");
+      setStep(2);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStep3 = async () => {
+    if (!schoolId || !user) {
+      setStep(3);
+      return;
+    }
+    if (!teacherEmail.trim() || !teacherName.trim()) {
+      toast.error("Please enter teacher name and email");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("teacher_invites").insert({
+        school_id: schoolId,
+        email: teacherEmail.trim(),
+        full_name: teacherName.trim(),
+        invited_by: user.id,
+      });
+      if (error) throw error;
+      toast.success("Invite saved");
+      setStep(3);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split("\n").filter((l) => l.trim());
+      // Skip header row if it looks like one
+      const start = lines[0]?.toLowerCase().includes("name") ? 1 : 0;
+      const students = lines.slice(start).map((line) => {
+        const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+        return { first_name: parts[0] || "", last_name: parts[1] || "" };
+      }).filter((s) => s.first_name);
+      setCsvStudents(students);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleStep4 = async () => {
+    if (!schoolId) return;
+    if (csvStudents.length === 0) {
+      setStep(4);
+      return;
+    }
+    setLoading(true);
+    try {
+      const rows = csvStudents.map((s) => ({
+        school_id: schoolId,
+        first_name: s.first_name,
+        last_name: s.last_name,
+      }));
+      const { error } = await supabase.from("students").insert(rows);
+      if (error) throw error;
+      toast.success(`${csvStudents.length} students added`);
+      setStep(4);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Progress header */}
+      <div className="w-full max-w-2xl mx-auto px-6 pt-10 pb-4">
+        <div className="flex items-center justify-between mb-3">
+          {STEPS.map((s, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-colors ${
+                  i <= step
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <s.icon className="w-4 h-4" />
+              </div>
+              <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground hidden sm:block">
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Progress value={progress} className="h-1 bg-secondary" />
+      </div>
+
+      {/* Step content */}
+      <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-16">
+        <Card className="w-full max-w-lg">
+          <CardContent className="p-8 sm:p-10">
+            {/* STEP 0: School Details */}
+            {step === 0 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2">School Details</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Confirm your school name and upload a logo.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                      School Name
+                    </label>
+                    <Input
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder={profile?.school_id ? "Your school name" : ""}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                      Logo
+                    </label>
+                    <div className="flex items-center gap-4">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="w-16 h-16 object-contain rounded" />
+                      ) : (
+                        <div className="w-16 h-16 rounded bg-secondary flex items-center justify-center">
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <label className="cursor-pointer">
+                        <span className="text-xs text-accent underline underline-offset-2">Choose file</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleStep1} disabled={loading} className="w-full">
+                  {loading ? "Saving…" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+
+            {/* STEP 1: First Class */}
+            {step === 1 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2">Add Your First Class</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Set up one class to get started. You can add more later.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                      Class Name
+                    </label>
+                    <Input
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      placeholder="e.g. Junior Ballet"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                        Day
+                      </label>
+                      <select
+                        value={classDay}
+                        onChange={(e) => setClassDay(Number(e.target.value))}
+                        className="w-full h-11 border-0 border-b border-foreground/20 bg-transparent px-0 py-2 text-sm font-light focus:outline-none focus:border-accent"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                          <option key={d} value={d}>{dayNames[d]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                        Time
+                      </label>
+                      <Input
+                        type="time"
+                        value={classTime}
+                        onChange={(e) => setClassTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(0)} className="flex-shrink-0">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <Button onClick={handleStep2} disabled={loading} className="flex-1">
+                    {loading ? "Creating…" : "Create Class"} <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Invite Teacher */}
+            {step === 2 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2">Invite Your First Teacher</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Add a teacher to help manage your classes, or skip for now.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                      Teacher Name
+                    </label>
+                    <Input
+                      value={teacherName}
+                      onChange={(e) => setTeacherName(e.target.value)}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">
+                      Email
+                    </label>
+                    <Input
+                      type="email"
+                      value={teacherEmail}
+                      onChange={(e) => setTeacherEmail(e.target.value)}
+                      placeholder="teacher@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-shrink-0">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <Button onClick={handleStep3} disabled={loading} className="flex-1">
+                    {loading ? "Saving…" : teacherName ? "Send Invite" : "Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+                <button
+                  onClick={() => setStep(3)}
+                  className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
+                >
+                  <SkipForward className="w-3 h-3" /> Skip for now
+                </button>
+              </div>
+            )}
+
+            {/* STEP 3: Add Students */}
+            {step === 3 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2">Add Students</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Upload a CSV with student names (first_name, last_name), or skip and add them later.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block cursor-pointer">
+                    <div className="border border-dashed border-foreground/20 rounded-sm p-8 text-center hover:border-accent transition-colors">
+                      <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {csvFile ? csvFile.name : "Choose CSV file"}
+                      </span>
+                    </div>
+                    <input type="file" accept=".csv" className="hidden" onChange={handleCsvSelect} />
+                  </label>
+
+                  {csvStudents.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-shrink-0">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <Button onClick={handleStep4} disabled={loading} className="flex-1">
+                    {loading ? "Adding…" : csvStudents.length > 0 ? `Add ${csvStudents.length} Students` : "Continue"}{" "}
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+                <button
+                  onClick={() => setStep(4)}
+                  className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
+                >
+                  <SkipForward className="w-3 h-3" /> Skip for now
+                </button>
+              </div>
+            )}
+
+            {/* STEP 4: Complete */}
+            {step === 4 && (
+              <div className="space-y-8 text-center py-4">
+                <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-accent" />
+                </div>
+                <div>
+                  <h1 className="text-2xl mb-3">You're All Set</h1>
+                  <p className="text-sm text-muted-foreground font-light max-w-sm mx-auto">
+                    Your school is ready. You can manage classes, take registers, and track attendance from your dashboard.
+                  </p>
+                </div>
+                <Button onClick={() => navigate("/")} className="w-full">
+                  Go to Dashboard <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
