@@ -101,9 +101,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create the teacher auth user with a random password (they'll reset it)
-    const tempPassword = crypto.randomUUID() + "Aa1!";
-    
     let teacherUserId: string;
 
     if (existingUser) {
@@ -121,20 +118,23 @@ Deno.serve(async (req) => {
         school_id: schoolId,
       });
     } else {
-      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email: email.trim(),
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: full_name.trim(),
-          school_id: schoolId,
-          role: "teacher",
-        },
-      });
+      // Use inviteUserByEmail — this creates the user AND sends them
+      // an email with a link to set their password
+      const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(
+        email.trim(),
+        {
+          data: {
+            full_name: full_name.trim(),
+            school_id: schoolId,
+            role: "teacher",
+          },
+          redirectTo: `${req.headers.get("origin") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/reset-password`,
+        }
+      );
 
       if (createError) {
         return new Response(
-          JSON.stringify({ error: `Failed to create user: ${createError.message}` }),
+          JSON.stringify({ error: `Failed to invite user: ${createError.message}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -149,16 +149,6 @@ Deno.serve(async (req) => {
       invited_by: caller.id,
       accepted_at: null,
     });
-
-    // Send password reset so teacher can set their own password
-    const { error: resetError } = await adminClient.auth.admin.generateLink({
-      type: "recovery",
-      email: email.trim(),
-    });
-
-    if (resetError) {
-      console.error("Failed to generate recovery link:", resetError);
-    }
 
     return new Response(
       JSON.stringify({ success: true, teacher_user_id: teacherUserId }),
