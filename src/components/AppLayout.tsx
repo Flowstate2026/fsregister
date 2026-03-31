@@ -18,12 +18,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-card/90 backdrop-blur-md">
-        <div className="container flex h-14 items-center justify-between">
-          <h1 className="font-display text-lg font-bold text-foreground tracking-tight">FS Register</h1>
+      <header className="sticky top-0 z-10 border-b border-border/40 bg-card">
+        <div className="container flex h-16 items-center justify-between">
+          <h1 className="font-display text-xl text-foreground">FS Register</h1>
           <button
             onClick={async () => { await signOut(); navigate("/login"); }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Sign out"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -33,24 +33,24 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       </header>
 
       {/* Content */}
-      <main className="container flex-1 py-8 pb-28">
+      <main className="container flex-1 py-10 pb-28">
         {children}
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/60 bg-card/95 backdrop-blur-md">
-        <div className="container flex h-14 items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/40 bg-card">
+        <div className="container flex h-16 items-center justify-around">
           {navItems.map(({ path, icon: Icon, label }) => (
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center gap-0.5 px-5 py-1.5 text-[10px] tracking-wide uppercase transition-colors ${
+              className={`flex flex-col items-center gap-1 px-5 py-2 text-[9px] tracking-[0.25em] uppercase transition-colors ${
                 isActive(path)
-                  ? "text-foreground font-medium"
+                  ? "text-accent"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className={`h-4.5 w-4.5 ${isActive(path) ? "stroke-[2]" : "stroke-[1.5]"}`} />
+              <Icon className={`h-4 w-4 ${isActive(path) ? "stroke-[2]" : "stroke-[1.5]"}`} />
               {label}
             </button>
           ))}
