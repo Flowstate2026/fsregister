@@ -14,7 +14,23 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setResetSent(true);
+    }
+    setLoading(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +70,23 @@ const Login = () => {
         <div className="mb-16 text-center">
           <h1 className="font-display text-4xl text-foreground">FS Register</h1>
           <p className="mt-4 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-            {mode === "login" ? "Sign in to your account" : "Create your demo account"}
+            {mode === "login" ? "Sign in to your account" : mode === "signup" ? "Create your demo account" : "Reset your password"}
           </p>
         </div>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-8">
+        {mode === "forgot" && resetSent ? (
+          <div className="text-center space-y-4">
+            <p className="text-sm text-foreground">Check your email for a password reset link.</p>
+            <button
+              type="button"
+              onClick={() => { setMode("login"); setResetSent(false); setError(""); }}
+              className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+        <form onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword} className="space-y-8">
           {mode === "signup" && (
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-[10px] font-light uppercase tracking-[0.35em] text-muted-foreground">Full Name</Label>
@@ -86,6 +114,7 @@ const Login = () => {
             />
           </div>
 
+          {mode !== "forgot" && (
           <div className="space-y-2">
             <Label htmlFor="password" className="text-[10px] font-light uppercase tracking-[0.35em] text-muted-foreground">Password</Label>
             <Input
@@ -99,21 +128,32 @@ const Login = () => {
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
           </div>
+          )}
 
           {error && <p className="text-xs text-risk">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
-              ? mode === "login" ? "Signing in…" : "Creating account…"
-              : mode === "login" ? "Sign in" : "Create account"}
+              ? mode === "login" ? "Signing in…" : mode === "signup" ? "Creating account…" : "Sending…"
+              : mode === "login" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
           </Button>
         </form>
+        )}
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-3">
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => { setMode("forgot"); setError(""); }}
+              className="block w-full text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Forgot your password?
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
-            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setResetSent(false); }}
+            className="block w-full text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
           >
             {mode === "login"
               ? "Need a demo account? Sign up"
