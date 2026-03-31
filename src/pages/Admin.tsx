@@ -31,11 +31,15 @@ const Admin = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      setResult(data);
-      setSchoolName("");
-      setAdminEmail("");
-      setAdminUserPassword("");
-      toast.success("School and owner account created");
+      // Auto-login the new owner and redirect to onboarding
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: adminUserPassword,
+      });
+      if (signInError) throw signInError;
+
+      toast.success("School created — redirecting to onboarding");
+      navigate("/onboarding");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
