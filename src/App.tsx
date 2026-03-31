@@ -58,6 +58,8 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
+            <Route path="/students" element={<ProtectedRoute><TeacherStudents /></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><TeacherNotes /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/dpa" element={<DataProcessingAgreement />} />
             <Route path="*" element={<NotFound />} />
