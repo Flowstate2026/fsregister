@@ -69,6 +69,26 @@ const StudentProfile = () => {
     onError: (err) => { toast.error("Failed to add note: " + (err as Error).message); },
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
+      if (!studentId) throw new Error("No student");
+      const newArchived = !student?.archived;
+      const { error } = await supabase
+        .from("students")
+        .update({ archived: newArchived })
+        .eq("id", studentId);
+      if (error) throw error;
+      return newArchived;
+    },
+    onSuccess: (archived) => {
+      queryClient.invalidateQueries({ queryKey: ["student", studentId] });
+      queryClient.invalidateQueries({ queryKey: ["owner-students"] });
+      toast.success(archived ? "Student archived" : "Student reinstated");
+      if (archived) navigate(-1);
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
   if (isLoading) return <AppLayout><div className="space-y-4"><div className="h-8 w-48 animate-pulse bg-muted/40" /><div className="h-40 animate-pulse bg-muted/40" /></div></AppLayout>;
   if (!student) return null;
 
