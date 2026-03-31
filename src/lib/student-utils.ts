@@ -24,7 +24,7 @@ export function calculateAttendancePercentage(
 ): number {
   const eightWeeksAgo = subWeeks(new Date(), 8);
   const recent = records.filter((r) => new Date(r.date) >= eightWeeksAgo);
-  if (recent.length === 0) return 100;
+  if (recent.length < 2) return 100;
   const present = recent.filter((r) => r.present).length;
   return Math.round((present / recent.length) * 100);
 }
