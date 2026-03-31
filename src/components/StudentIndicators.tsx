@@ -17,7 +17,7 @@ const StudentIndicators = ({ isNew, needsNote, isAtRisk, attendancePercent }: St
         <PenLine className="h-3.5 w-3.5 text-gold" aria-label="Needs note" />
       )}
       {isAtRisk && (
-        <AlertTriangle className="h-3.5 w-3.5 text-risk" aria-label="At risk" />
+        <AlertTriangle className="h-3.5 w-3.5 text-risk" aria-label="Low attendance" />
       )}
       <span
         className={`text-[11px] font-light tabular-nums tracking-wide ${

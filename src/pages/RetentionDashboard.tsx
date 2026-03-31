@@ -30,8 +30,8 @@ const RetentionDashboard = () => {
 
   const sections = [
     { title: "New Families", icon: Star, iconClass: "text-gold", items: data?.newFamilies || [], metric: (s: any) => `Joined ${s.join_date}` },
-    { title: "At Risk", icon: AlertTriangle, iconClass: "text-risk", items: data?.atRisk || [], metric: (s: any) => `${s.percent}% attendance` },
-    { title: "Needs Attention", icon: PenLine, iconClass: "text-gold", items: data?.needsAttention || [], metric: () => "No note in 90+ days" },
+    { title: "Low Attendance", icon: AlertTriangle, iconClass: "text-risk", items: data?.atRisk || [], metric: (s: any) => `${s.percent}% attendance` },
+    { title: "Note Needed", icon: PenLine, iconClass: "text-gold", items: data?.needsAttention || [], metric: () => "No note in 90+ days" },
   ];
 
   return (
