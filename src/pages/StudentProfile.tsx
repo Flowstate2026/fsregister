@@ -134,7 +134,14 @@ const StudentProfile = () => {
 
           {showNoteForm && (
             <div className="mb-6 bg-card p-6 shadow-[var(--shadow-card)]">
-              <Textarea placeholder="Write a note about this student…" value={noteText} onChange={(e) => setNoteText(e.target.value)} className="mb-4 border-0 border-b border-foreground/20 bg-transparent rounded-none focus-visible:ring-0 font-light" rows={3} />
+              <div className="relative mb-4">
+                {!noteText && (
+                  <p className="pointer-events-none absolute inset-0 px-3 py-2 text-sm italic font-light text-muted-foreground/60 leading-relaxed">
+                    Start with something positive — what went well today? Then add something to work on for next time…
+                  </p>
+                )}
+                <Textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="relative border-0 border-b border-foreground/20 bg-transparent rounded-none focus-visible:ring-0 font-light" rows={3} />
+              </div>
               <div className="flex gap-3">
                 <Button size="sm" onClick={() => addNoteMutation.mutate()} disabled={!noteText.trim() || addNoteMutation.isPending}>
                   {addNoteMutation.isPending ? "Saving…" : "Save Note"}
