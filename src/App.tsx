@@ -15,6 +15,8 @@ import Onboarding from "./pages/Onboarding";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataProcessingAgreement from "./pages/DataProcessingAgreement";
 import DataManagement from "./pages/DataManagement";
+import TeacherStudents from "./pages/TeacherStudents";
+import TeacherNotes from "./pages/TeacherNotes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,8 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
+            <Route path="/students" element={<ProtectedRoute><TeacherStudents /></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><TeacherNotes /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/dpa" element={<DataProcessingAgreement />} />
             <Route path="*" element={<NotFound />} />

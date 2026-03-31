@@ -84,7 +84,7 @@ const ClassRegister = () => {
       const { error } = await supabase.from("attendance_records").insert(records);
       if (error) throw error;
     },
-    onSuccess: () => { setSubmitted(true); setEditing(false); queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] }); queryClient.invalidateQueries({ queryKey: ["register-students", classId] }); toast.success("Register saved"); },
+    onSuccess: () => { setSubmitted(true); setEditing(false); queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] }); queryClient.invalidateQueries({ queryKey: ["register-students", classId] }); queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] }); toast.success("Register saved"); navigate("/"); },
     onError: () => { toast.error("Failed to save register"); },
   });
 
