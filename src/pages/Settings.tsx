@@ -99,6 +99,23 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteTeacher = async (teacher: Teacher) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-teacher", {
+        body: { profile_id: teacher.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`${teacher.full_name} has been removed`);
+      fetchData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="max-w-lg mx-auto space-y-10">
