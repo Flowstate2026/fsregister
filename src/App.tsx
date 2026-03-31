@@ -17,6 +17,7 @@ import DataProcessingAgreement from "./pages/DataProcessingAgreement";
 import DataManagement from "./pages/DataManagement";
 import TeacherStudents from "./pages/TeacherStudents";
 import TeacherNotes from "./pages/TeacherNotes";
+import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
