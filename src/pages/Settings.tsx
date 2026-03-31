@@ -6,7 +6,18 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Mail, CheckCircle2, Clock, Users } from "lucide-react";
+import { UserPlus, Mail, CheckCircle2, Clock, Users, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Invite {
   id: string;
@@ -80,6 +91,23 @@ export default function Settings() {
       toast.success("Teacher invited — they'll receive a password reset email");
       setTeacherName("");
       setTeacherEmail("");
+      fetchData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTeacher = async (teacher: Teacher) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-teacher", {
+        body: { profile_id: teacher.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`${teacher.full_name} has been removed`);
       fetchData();
     } catch (err) {
       toast.error((err as Error).message);
@@ -166,6 +194,30 @@ export default function Settings() {
                         {t.email}
                       </p>
                     </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="p-2 text-muted-foreground hover:text-risk transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove {t.full_name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete their account and remove them from all classes. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteTeacher(t)}
+                            className="bg-risk text-risk-foreground hover:bg-risk/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 ))}
               </div>
