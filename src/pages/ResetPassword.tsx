@@ -15,43 +15,96 @@ const ResetPassword = () => {
   const [isRecovery, setIsRecovery] = useState(false);
   const [checkingLink, setCheckingLink] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-
+  const getAuthCallbackParams = () => {
     const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
     const queryParams = new URLSearchParams(window.location.search);
     const type = hashParams.get("type") || queryParams.get("type");
 
-    const hasCallbackParams =
-      type === "invite" ||
-      type === "recovery" ||
-      hashParams.has("access_token") ||
-      hashParams.has("refresh_token") ||
-      queryParams.has("code") ||
-      queryParams.has("token") ||
-      queryParams.has("token_hash");
+    return {
+      type,
+      code: queryParams.get("code"),
+      tokenHash: queryParams.get("token_hash"),
+      accessToken: hashParams.get("access_token"),
+      refreshToken: hashParams.get("refresh_token"),
+      hasCallbackParams:
+        type === "invite" ||
+        type === "recovery" ||
+        hashParams.has("access_token") ||
+        hashParams.has("refresh_token") ||
+        queryParams.has("code") ||
+        queryParams.has("token") ||
+        queryParams.has("token_hash"),
+    };
+  };
 
-    // Do not block the UI when callback params are present.
-    if (hasCallbackParams) {
-      setIsRecovery(true);
-      setCheckingLink(false);
+  const establishRecoverySession = async () => {
+    const callback = getAuthCallbackParams();
+
+    const {
+      data: { session: currentSession },
+    } = await supabase.auth.getSession();
+
+    if (!currentSession) {
+      if (callback.code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(callback.code);
+        if (error) throw error;
+      } else {
+        const otpType =
+          callback.type === "invite" || callback.type === "recovery" ? callback.type : null;
+
+        if (callback.tokenHash && otpType) {
+          const { error } = await supabase.auth.verifyOtp({
+            type: otpType,
+            token_hash: callback.tokenHash,
+          });
+          if (error) throw error;
+        } else if (callback.accessToken && callback.refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: callback.accessToken,
+            refresh_token: callback.refreshToken,
+          });
+          if (error) throw error;
+        }
+      }
     }
 
-    const bootstrap = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
+    return {
+      hasSession: Boolean(session),
+      hasCallbackParams: callback.hasCallbackParams,
+    };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    const { hasCallbackParams } = getAuthCallbackParams();
+
+    if (hasCallbackParams) setIsRecovery(true);
+
+    const bootstrap = async () => {
+      try {
+        const { hasSession } = await establishRecoverySession();
+
+        if (!mounted) return;
+
+        setIsRecovery(hasSession || hasCallbackParams);
+      } catch {
+        if (!mounted) return;
+        setIsRecovery(hasCallbackParams);
+      } finally {
+        if (mounted) setCheckingLink(false);
+      }
+    };
+
+    const fallbackTimeout = window.setTimeout(() => {
       if (!mounted) return;
 
-      if (session) {
-        setIsRecovery(true);
-      } else if (!hasCallbackParams) {
-        setIsRecovery(false);
-      }
-
+      if (hasCallbackParams) setIsRecovery(true);
       setCheckingLink(false);
-    };
+    }, 2500);
 
     const {
       data: { subscription },
@@ -69,11 +122,15 @@ const ResetPassword = () => {
     });
 
     bootstrap().catch(() => {
-      if (mounted) setCheckingLink(false);
+      if (mounted) {
+        setIsRecovery(hasCallbackParams);
+        setCheckingLink(false);
+      }
     });
 
     return () => {
       mounted = false;
+      window.clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -92,14 +149,23 @@ const ResetPassword = () => {
     }
 
     setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      setSuccess(true);
-      setTimeout(() => navigate("/login"), 2000);
+    try {
+      const { hasSession } = await establishRecoverySession();
+      if (!hasSession) {
+        setError("This invite or reset link has expired. Please request a new one.");
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setSuccess(true);
+        setTimeout(() => navigate("/login"), 2000);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (checkingLink) {
