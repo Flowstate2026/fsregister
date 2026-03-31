@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, LogOut } from "lucide-react";
+import { Home, BookOpen, BarChart3, LogOut, Shield } from "lucide-react";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, isOwner, signOut } = useAuth();
@@ -10,7 +10,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navItems = [
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
-    ...(isOwner ? [{ path: "/dashboard", icon: BarChart3, label: "Dashboard" }] : []),
+    ...(isOwner ? [{ path: "/dashboard", icon: BarChart3, label: "Dashboard" }, { path: "/data", icon: Shield, label: "Data" }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;

@@ -11,6 +11,9 @@ import AllClasses from "./pages/AllClasses";
 import RetentionDashboard from "./pages/RetentionDashboard";
 import Admin from "./pages/Admin";
 import Onboarding from "./pages/Onboarding";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DataProcessingAgreement from "./pages/DataProcessingAgreement";
+import DataManagement from "./pages/DataManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +53,9 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><RetentionDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/dpa" element={<DataProcessingAgreement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
