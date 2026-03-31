@@ -114,6 +114,7 @@ const Login = () => {
             />
           </div>
 
+          {mode !== "forgot" && (
           <div className="space-y-2">
             <Label htmlFor="password" className="text-[10px] font-light uppercase tracking-[0.35em] text-muted-foreground">Password</Label>
             <Input
@@ -127,15 +128,17 @@ const Login = () => {
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
           </div>
+          )}
 
           {error && <p className="text-xs text-risk">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
-              ? mode === "login" ? "Signing in…" : "Creating account…"
-              : mode === "login" ? "Sign in" : "Create account"}
+              ? mode === "login" ? "Signing in…" : mode === "signup" ? "Creating account…" : "Sending…"
+              : mode === "login" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
           </Button>
         </form>
+        )}
 
         <div className="mt-8 text-center">
           <button
