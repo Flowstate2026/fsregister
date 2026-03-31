@@ -116,6 +116,20 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteInvite = async (invite: Invite) => {
+    try {
+      const { error } = await supabase
+        .from("teacher_invites")
+        .delete()
+        .eq("id", invite.id);
+      if (error) throw error;
+      toast.success(`Invite for ${invite.full_name} removed`);
+      fetchData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="max-w-lg mx-auto space-y-10">
