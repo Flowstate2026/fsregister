@@ -159,14 +159,15 @@ export default function Onboarding() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from("teacher_invites").insert({
-        school_id: schoolId,
-        email: teacherEmail.trim(),
-        full_name: teacherName.trim(),
-        invited_by: user.id,
+      const { data, error } = await supabase.functions.invoke("invite-teacher", {
+        body: {
+          email: teacherEmail.trim(),
+          full_name: teacherName.trim(),
+        },
       });
       if (error) throw error;
-      toast.success("Invite saved");
+      if (data?.error) throw new Error(data.error);
+      toast.success("Teacher invited");
       setStep(4);
     } catch (err) {
       toast.error((err as Error).message);
