@@ -31,11 +31,13 @@ const ResetPassword = () => {
       queryParams.has("token") ||
       queryParams.has("token_hash");
 
-    const bootstrap = async () => {
-      if (hasCallbackParams && mounted) {
-        setIsRecovery(true);
-      }
+    // Do not block the UI when callback params are present.
+    if (hasCallbackParams) {
+      setIsRecovery(true);
+      setCheckingLink(false);
+    }
 
+    const bootstrap = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -75,6 +77,30 @@ const ResetPassword = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+    const { error: updateError } = await supabase.auth.updateUser({ password });
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      setSuccess(true);
+      setTimeout(() => navigate("/login"), 2000);
+    }
+    setLoading(false);
+  };
 
   if (checkingLink) {
     return (
