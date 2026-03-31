@@ -70,7 +70,7 @@ const Login = () => {
         <div className="mb-16 text-center">
           <h1 className="font-display text-4xl text-foreground">FS Register</h1>
           <p className="mt-4 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-            {mode === "login" ? "Sign in to your account" : "Create your demo account"}
+            {mode === "login" ? "Sign in to your account" : mode === "signup" ? "Create your demo account" : "Reset your password"}
           </p>
         </div>
 
