@@ -53,6 +53,9 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><RetentionDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/dpa" element={<DataProcessingAgreement />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

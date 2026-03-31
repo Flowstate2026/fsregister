@@ -337,11 +337,20 @@ export default function Onboarding() {
 
                 <div className="space-y-4">
                   <a
-                    href="#"
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
-                    onClick={(e) => { e.preventDefault(); toast.info("Full Privacy Policy & DPA documents will be available at launch."); }}
                   >
-                    Read the full Privacy Policy and Data Processing Agreement →
+                    Read the full Privacy Policy →
+                  </a>
+                  <a
+                    href="/dpa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-accent underline underline-offset-2 hover:text-accent/80 transition-colors ml-4"
+                  >
+                    Data Processing Agreement →
                   </a>
 
                   <div className="flex items-start gap-3">
