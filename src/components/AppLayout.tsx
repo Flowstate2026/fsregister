@@ -10,7 +10,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navItems = [
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
-    ...(isOwner ? [{ path: "/dashboard", icon: BarChart3, label: "Dashboard" }] : []),
+    ...(isOwner ? [{ path: "/dashboard", icon: BarChart3, label: "Dashboard" }, { path: "/data", icon: Shield, label: "Data" }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
