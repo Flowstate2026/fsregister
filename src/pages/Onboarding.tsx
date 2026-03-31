@@ -26,6 +26,10 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // GDPR state
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [lawfulBasisConfirmed, setLawfulBasisConfirmed] = useState(false);
+
   // Step 1 state
   const [schoolName, setSchoolName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
