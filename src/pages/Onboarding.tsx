@@ -8,9 +8,11 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
 
 const STEPS = [
+  { label: "GDPR", icon: ShieldCheck },
   { label: "School Details", icon: School },
   { label: "First Class", icon: GraduationCap },
   { label: "Invite Teacher", icon: Users },
@@ -23,6 +25,10 @@ export default function Onboarding() {
   const { profile, user } = useAuth();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // GDPR state
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [lawfulBasisConfirmed, setLawfulBasisConfirmed] = useState(false);
 
   // Step 1 state
   const [schoolName, setSchoolName] = useState("");
@@ -57,6 +63,30 @@ export default function Onboarding() {
     setLogoPreview(URL.createObjectURL(file));
   };
 
+  const handleGdprAccept = async () => {
+    if (!privacyAccepted || !lawfulBasisConfirmed) {
+      toast.error("Please accept both checkboxes to continue");
+      return;
+    }
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("gdpr_consent_records" as any).insert({
+        user_id: user.id,
+        user_email: user.email || "",
+        school_id: schoolId || null,
+        privacy_policy_accepted: true,
+        lawful_basis_confirmed: true,
+      });
+      if (error) throw error;
+      setStep(1);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStep1 = async () => {
     if (!schoolId) return;
     setLoading(true);
@@ -86,7 +116,7 @@ export default function Onboarding() {
         // For now just move on — school was already created with name
       }
 
-      setStep(1);
+      setStep(2);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -109,7 +139,7 @@ export default function Onboarding() {
       });
       if (error) throw error;
       toast.success("Class created");
-      setStep(2);
+      setStep(3);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -119,7 +149,7 @@ export default function Onboarding() {
 
   const handleStep3 = async () => {
     if (!schoolId || !user) {
-      setStep(3);
+      setStep(4);
       return;
     }
     if (!teacherEmail.trim() || !teacherName.trim()) {
@@ -136,7 +166,7 @@ export default function Onboarding() {
       });
       if (error) throw error;
       toast.success("Invite saved");
-      setStep(3);
+      setStep(4);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -183,7 +213,7 @@ export default function Onboarding() {
 
   const handleStep4 = async () => {
     if (!schoolId) return;
-    if (csvStudents.length === 0) { setStep(4); return; }
+    if (csvStudents.length === 0) { setStep(5); return; }
     setLoading(true);
     try {
       // Collect unique class names and ensure they exist
@@ -245,7 +275,7 @@ export default function Onboarding() {
       }
 
       toast.success(`${csvStudents.length} students added`);
-      setStep(4);
+      setStep(5);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -282,8 +312,75 @@ export default function Onboarding() {
       <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-16">
         <Card className="w-full max-w-lg">
           <CardContent className="p-8 sm:p-10">
-            {/* STEP 0: School Details */}
+            {/* STEP 0: GDPR Consent */}
             {step === 0 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2 font-semibold tracking-tight">Privacy & Data Protection</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Before we get started, please review and accept our data protection terms.
+                  </p>
+                </div>
+
+                <div className="rounded-sm bg-secondary/30 p-5 space-y-4 text-sm text-foreground/80 font-light leading-relaxed max-h-64 overflow-y-auto">
+                  <p className="font-medium text-foreground">FS Register Privacy Policy & Data Processing Agreement — Summary</p>
+                  <ul className="list-disc pl-4 space-y-2">
+                    <li>FS Register processes student names, dates of birth, attendance records, parent contact details, and teacher information on behalf of your school.</li>
+                    <li>Your school remains the Data Controller. FS Register acts as a Data Processor under the terms of our Data Processing Agreement.</li>
+                    <li>All data is stored securely with encryption at rest and in transit. Data is hosted within the EU/UK region.</li>
+                    <li>Student and parent data is used solely for the purpose of class management, attendance tracking, and school communications.</li>
+                    <li>Data is retained for the duration of the school's active account. Schools may request data export or deletion at any time.</li>
+                    <li>FS Register does not sell, share, or use personal data for marketing or any purpose beyond the agreed service.</li>
+                    <li>Parents and students have the right to access, rectify, and request deletion of their personal data through the school.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <a
+                    href="#"
+                    className="text-xs text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
+                    onClick={(e) => { e.preventDefault(); toast.info("Full Privacy Policy & DPA documents will be available at launch."); }}
+                  >
+                    Read the full Privacy Policy and Data Processing Agreement →
+                  </a>
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="privacy-accept"
+                      checked={privacyAccepted}
+                      onCheckedChange={(checked) => setPrivacyAccepted(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="privacy-accept" className="text-sm font-light leading-snug cursor-pointer">
+                      I confirm I have read and agree to the FS Register Privacy Policy and Data Processing Agreement
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="lawful-basis"
+                      checked={lawfulBasisConfirmed}
+                      onCheckedChange={(checked) => setLawfulBasisConfirmed(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="lawful-basis" className="text-sm font-light leading-snug cursor-pointer">
+                      I confirm I have a lawful basis for sharing student and parent data with FS Register and have provided appropriate privacy notices to parents
+                    </label>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleGdprAccept}
+                  disabled={loading || !privacyAccepted || !lawfulBasisConfirmed}
+                  className="w-full"
+                >
+                  {loading ? "Saving…" : "Accept & Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+
+            {/* STEP 1: School Details */}
+            {step === 1 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">School Details</h1>
@@ -331,7 +428,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 1: First Class */}
-            {step === 1 && (
+            {step === 2 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Add Your First Class</h1>
@@ -381,7 +478,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(0)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep2} disabled={loading} className="flex-1">
@@ -392,7 +489,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 2: Invite Teacher */}
-            {step === 2 && (
+            {step === 3 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Invite Your First Teacher</h1>
@@ -426,7 +523,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep3} disabled={loading} className="flex-1">
@@ -434,7 +531,7 @@ export default function Onboarding() {
                   </Button>
                 </div>
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(4)}
                   className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
                 >
                   <SkipForward className="w-3 h-3" /> Skip for now
@@ -443,7 +540,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 3: Add Students */}
-            {step === 3 && (
+            {step === 4 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Add Students</h1>
@@ -486,7 +583,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep4} disabled={loading} className="flex-1">
@@ -495,7 +592,7 @@ export default function Onboarding() {
                   </Button>
                 </div>
                 <button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(5)}
                   className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
                 >
                   <SkipForward className="w-3 h-3" /> Skip for now
@@ -504,7 +601,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 4: Complete */}
-            {step === 4 && (
+            {step === 5 && (
               <div className="space-y-8 text-center py-4">
                 <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
                   <CheckCircle2 className="w-8 h-8 text-accent" />
