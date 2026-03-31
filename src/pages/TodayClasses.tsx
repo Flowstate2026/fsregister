@@ -25,22 +25,22 @@ const TodayClasses = () => {
   return (
     <AppLayout>
       <div className="animate-fade-in">
-        <div className="mb-10">
-          <h2 className="font-display text-2xl font-bold text-foreground">
+        <div className="mb-12">
+          <h2 className="font-display text-3xl text-foreground">
             Today's Classes
           </h2>
-          <p className="mt-1.5 text-xs text-muted-foreground tracking-wide uppercase">{getDayName(today)}</p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">{getDayName(today)}</p>
         </div>
 
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted/50" />
+              <div key={i} className="h-20 animate-pulse bg-muted/50" />
             ))}
           </div>
         ) : !classes?.length ? (
-          <div className="rounded-2xl border border-border/60 bg-card p-12 text-center shadow-[var(--shadow-card)]">
-            <p className="text-sm text-muted-foreground">No classes scheduled today</p>
+          <div className="bg-card p-14 text-center shadow-[var(--shadow-card)]">
+            <p className="text-sm font-light text-muted-foreground">No classes scheduled today</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -48,13 +48,13 @@ const TodayClasses = () => {
               <button
                 key={cls.id}
                 onClick={() => navigate(`/register/${cls.id}`)}
-                className="flex w-full items-center justify-between rounded-2xl border border-border/60 bg-card px-6 py-5 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
+                className="flex w-full items-center justify-between bg-card px-6 py-6 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
               >
                 <div>
-                  <h3 className="font-display text-base font-semibold text-foreground">
+                  <h3 className="font-display text-lg text-foreground">
                     {cls.name}
                   </h3>
-                  <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="mt-2.5 flex items-center gap-5 text-[11px] font-light tracking-wide text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <Clock className="h-3 w-3" />
                       {formatTime(cls.time_of_day)}
@@ -65,7 +65,7 @@ const TodayClasses = () => {
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
               </button>
             ))}
           </div>

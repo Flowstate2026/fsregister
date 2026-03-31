@@ -9,18 +9,18 @@ interface StudentIndicatorsProps {
 
 const StudentIndicators = ({ isNew, needsNote, isAtRisk, attendancePercent }: StudentIndicatorsProps) => {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       {isNew && (
-        <Star className="h-3.5 w-3.5 fill-star text-star" aria-label="New student" />
+        <Star className="h-3.5 w-3.5 fill-gold text-gold" aria-label="New student" />
       )}
       {needsNote && (
-        <PenLine className="h-3.5 w-3.5 text-accent" aria-label="Needs note" />
+        <PenLine className="h-3.5 w-3.5 text-gold" aria-label="Needs note" />
       )}
       {isAtRisk && (
         <AlertTriangle className="h-3.5 w-3.5 text-risk" aria-label="At risk" />
       )}
       <span
-        className={`text-[11px] font-normal tabular-nums ${
+        className={`text-[11px] font-light tabular-nums tracking-wide ${
           isAtRisk ? "text-risk" : "text-muted-foreground"
         }`}
       >
