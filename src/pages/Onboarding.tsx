@@ -116,7 +116,7 @@ export default function Onboarding() {
         // For now just move on — school was already created with name
       }
 
-      setStep(1);
+      setStep(2);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -139,7 +139,7 @@ export default function Onboarding() {
       });
       if (error) throw error;
       toast.success("Class created");
-      setStep(2);
+      setStep(3);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -149,7 +149,7 @@ export default function Onboarding() {
 
   const handleStep3 = async () => {
     if (!schoolId || !user) {
-      setStep(3);
+      setStep(4);
       return;
     }
     if (!teacherEmail.trim() || !teacherName.trim()) {
@@ -166,7 +166,7 @@ export default function Onboarding() {
       });
       if (error) throw error;
       toast.success("Invite saved");
-      setStep(3);
+      setStep(4);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -213,7 +213,7 @@ export default function Onboarding() {
 
   const handleStep4 = async () => {
     if (!schoolId) return;
-    if (csvStudents.length === 0) { setStep(4); return; }
+    if (csvStudents.length === 0) { setStep(5); return; }
     setLoading(true);
     try {
       // Collect unique class names and ensure they exist
@@ -275,7 +275,7 @@ export default function Onboarding() {
       }
 
       toast.success(`${csvStudents.length} students added`);
-      setStep(4);
+      setStep(5);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -313,7 +313,7 @@ export default function Onboarding() {
         <Card className="w-full max-w-lg">
           <CardContent className="p-8 sm:p-10">
             {/* STEP 0: School Details */}
-            {step === 0 && (
+            {step === 1 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">School Details</h1>
@@ -361,7 +361,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 1: First Class */}
-            {step === 1 && (
+            {step === 2 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Add Your First Class</h1>
@@ -411,7 +411,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(0)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep2} disabled={loading} className="flex-1">
@@ -422,7 +422,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 2: Invite Teacher */}
-            {step === 2 && (
+            {step === 3 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Invite Your First Teacher</h1>
@@ -456,7 +456,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep3} disabled={loading} className="flex-1">
@@ -464,7 +464,7 @@ export default function Onboarding() {
                   </Button>
                 </div>
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(4)}
                   className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
                 >
                   <SkipForward className="w-3 h-3" /> Skip for now
@@ -473,7 +473,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 3: Add Students */}
-            {step === 3 && (
+            {step === 4 && (
               <div className="space-y-8">
                 <div>
                   <h1 className="text-2xl mb-2">Add Students</h1>
@@ -516,7 +516,7 @@ export default function Onboarding() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-shrink-0">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Button onClick={handleStep4} disabled={loading} className="flex-1">
@@ -525,7 +525,7 @@ export default function Onboarding() {
                   </Button>
                 </div>
                 <button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(5)}
                   className="w-full text-xs text-muted-foreground hover:text-accent flex items-center justify-center gap-1 transition-colors"
                 >
                   <SkipForward className="w-3 h-3" /> Skip for now
@@ -534,7 +534,7 @@ export default function Onboarding() {
             )}
 
             {/* STEP 4: Complete */}
-            {step === 4 && (
+            {step === 5 && (
               <div className="space-y-8 text-center py-4">
                 <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
                   <CheckCircle2 className="w-8 h-8 text-accent" />
