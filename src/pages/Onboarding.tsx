@@ -312,7 +312,74 @@ export default function Onboarding() {
       <div className="flex-1 flex items-start justify-center px-6 pt-6 pb-16">
         <Card className="w-full max-w-lg">
           <CardContent className="p-8 sm:p-10">
-            {/* STEP 0: School Details */}
+            {/* STEP 0: GDPR Consent */}
+            {step === 0 && (
+              <div className="space-y-8">
+                <div>
+                  <h1 className="text-2xl mb-2 font-semibold tracking-tight">Privacy & Data Protection</h1>
+                  <p className="text-sm text-muted-foreground font-light">
+                    Before we get started, please review and accept our data protection terms.
+                  </p>
+                </div>
+
+                <div className="rounded-sm bg-secondary/30 p-5 space-y-4 text-sm text-foreground/80 font-light leading-relaxed max-h-64 overflow-y-auto">
+                  <p className="font-medium text-foreground">FS Register Privacy Policy & Data Processing Agreement — Summary</p>
+                  <ul className="list-disc pl-4 space-y-2">
+                    <li>FS Register processes student names, dates of birth, attendance records, parent contact details, and teacher information on behalf of your school.</li>
+                    <li>Your school remains the Data Controller. FS Register acts as a Data Processor under the terms of our Data Processing Agreement.</li>
+                    <li>All data is stored securely with encryption at rest and in transit. Data is hosted within the EU/UK region.</li>
+                    <li>Student and parent data is used solely for the purpose of class management, attendance tracking, and school communications.</li>
+                    <li>Data is retained for the duration of the school's active account. Schools may request data export or deletion at any time.</li>
+                    <li>FS Register does not sell, share, or use personal data for marketing or any purpose beyond the agreed service.</li>
+                    <li>Parents and students have the right to access, rectify, and request deletion of their personal data through the school.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <a
+                    href="#"
+                    className="text-xs text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
+                    onClick={(e) => { e.preventDefault(); toast.info("Full Privacy Policy & DPA documents will be available at launch."); }}
+                  >
+                    Read the full Privacy Policy and Data Processing Agreement →
+                  </a>
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="privacy-accept"
+                      checked={privacyAccepted}
+                      onCheckedChange={(checked) => setPrivacyAccepted(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="privacy-accept" className="text-sm font-light leading-snug cursor-pointer">
+                      I confirm I have read and agree to the FS Register Privacy Policy and Data Processing Agreement
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="lawful-basis"
+                      checked={lawfulBasisConfirmed}
+                      onCheckedChange={(checked) => setLawfulBasisConfirmed(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="lawful-basis" className="text-sm font-light leading-snug cursor-pointer">
+                      I confirm I have a lawful basis for sharing student and parent data with FS Register and have provided appropriate privacy notices to parents
+                    </label>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleGdprAccept}
+                  disabled={loading || !privacyAccepted || !lawfulBasisConfirmed}
+                  className="w-full"
+                >
+                  {loading ? "Saving…" : "Accept & Continue"} <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+
+            {/* STEP 1: School Details */}
             {step === 1 && (
               <div className="space-y-8">
                 <div>
