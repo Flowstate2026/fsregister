@@ -140,11 +140,20 @@ const Login = () => {
         </form>
         )}
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-3">
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => { setMode("forgot"); setError(""); }}
+              className="block w-full text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Forgot your password?
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
-            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setResetSent(false); }}
+            className="block w-full text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
           >
             {mode === "login"
               ? "Need a demo account? Sign up"
