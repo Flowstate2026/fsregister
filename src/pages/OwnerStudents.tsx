@@ -206,30 +206,47 @@ const OwnerStudents = () => {
                   <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
                     Date of Birth
                   </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dob && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dob ? format(dob, "d MMM yyyy") : "Select"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dob}
-                        onSelect={setDob}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Select
+                      value={dobDay}
+                      onValueChange={setDobDay}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={dobMonth}
+                      onValueChange={setDobMonth}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                          <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={dobYear}
+                      onValueChange={setDobYear}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
