@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
+import { Select as SelectRoot, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   isNewStudent,
@@ -33,7 +34,9 @@ const OwnerStudents = () => {
   // Form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [dob, setDob] = useState<Date>();
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
   const [joinDate, setJoinDate] = useState<Date>(new Date());
   const [parentEmail, setParentEmail] = useState("");
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -87,7 +90,7 @@ const OwnerStudents = () => {
           school_id: schoolId,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          date_of_birth: dob ? format(dob, "yyyy-MM-dd") : null,
+          date_of_birth: dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}` : null,
           join_date: format(joinDate, "yyyy-MM-dd"),
           parent_email: parentEmail.trim() || null,
         })
@@ -120,7 +123,9 @@ const OwnerStudents = () => {
     setShowForm(false);
     setFirstName("");
     setLastName("");
-    setDob(undefined);
+    setDobDay("");
+    setDobMonth("");
+    setDobYear("");
     setJoinDate(new Date());
     setParentEmail("");
     setSelectedClassIds([]);
@@ -206,30 +211,47 @@ const OwnerStudents = () => {
                   <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
                     Date of Birth
                   </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dob && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dob ? format(dob, "d MMM yyyy") : "Select"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dob}
-                        onSelect={setDob}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <SelectRoot
+                      value={dobDay}
+                      onValueChange={setDobDay}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </SelectRoot>
+                    <SelectRoot
+                      value={dobMonth}
+                      onValueChange={setDobMonth}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                          <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </SelectRoot>
+                    <SelectRoot
+                      value={dobYear}
+                      onValueChange={setDobYear}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </SelectRoot>
+                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
