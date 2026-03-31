@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import TodayClasses from "./pages/TodayClasses";
 import ClassRegister from "./pages/ClassRegister";
 import StudentProfile from "./pages/StudentProfile";
+import OwnerStudents from "./pages/OwnerStudents";
 import AllClasses from "./pages/AllClasses";
 import RetentionDashboard from "./pages/RetentionDashboard";
 import Admin from "./pages/Admin";

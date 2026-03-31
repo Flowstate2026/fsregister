@@ -106,6 +106,19 @@ const StudentProfile = () => {
             <h2 className="font-display text-3xl text-foreground">{student.first_name} {student.last_name}</h2>
             <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">Joined {format(parseISO(student.join_date), "d MMM yyyy")}</p>
             {student.parent_email && <p className="mt-1 text-[11px] font-light text-muted-foreground">Parent: {student.parent_email}</p>}
+            {isOwner && (
+              <button
+                onClick={() => archiveMutation.mutate()}
+                disabled={archiveMutation.isPending}
+                className="mt-3 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-risk transition-colors"
+              >
+                {student.archived ? (
+                  <><RotateCcw className="h-3 w-3" /> {archiveMutation.isPending ? "Reinstating…" : "Reinstate Student"}</>
+                ) : (
+                  <><Archive className="h-3 w-3" /> {archiveMutation.isPending ? "Archiving…" : "Archive Student"}</>
+                )}
+              </button>
+            )}
           </div>
           <StudentIndicators isNew={isNewStudent(student.join_date)} needsNote={needsNote(notes || [])} isAtRisk={isAtRisk(percent)} attendancePercent={percent} />
         </div>
