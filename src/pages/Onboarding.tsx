@@ -63,6 +63,30 @@ export default function Onboarding() {
     setLogoPreview(URL.createObjectURL(file));
   };
 
+  const handleGdprAccept = async () => {
+    if (!privacyAccepted || !lawfulBasisConfirmed) {
+      toast.error("Please accept both checkboxes to continue");
+      return;
+    }
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("gdpr_consent_records" as any).insert({
+        user_id: user.id,
+        user_email: user.email || "",
+        school_id: schoolId || null,
+        privacy_policy_accepted: true,
+        lawful_basis_confirmed: true,
+      });
+      if (error) throw error;
+      setStep(1);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStep1 = async () => {
     if (!schoolId) return;
     setLoading(true);
