@@ -34,7 +34,9 @@ const OwnerStudents = () => {
   // Form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [dob, setDob] = useState<Date>();
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
   const [joinDate, setJoinDate] = useState<Date>(new Date());
   const [parentEmail, setParentEmail] = useState("");
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
