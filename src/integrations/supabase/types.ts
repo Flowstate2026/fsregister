@@ -130,6 +130,39 @@ export type Database = {
           },
         ]
       }
+      gdpr_consent_records: {
+        Row: {
+          accepted_at: string
+          id: string
+          ip_address: string | null
+          lawful_basis_confirmed: boolean
+          privacy_policy_accepted: boolean
+          school_id: string | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          lawful_basis_confirmed?: boolean
+          privacy_policy_accepted?: boolean
+          school_id?: string | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          lawful_basis_confirmed?: boolean
+          privacy_policy_accepted?: boolean
+          school_id?: string | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
