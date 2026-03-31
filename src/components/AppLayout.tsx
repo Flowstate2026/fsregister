@@ -11,7 +11,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
     { path: "/dashboard", icon: BarChart3, label: "Dashboard" },
-    { path: "/data", icon: Shield, label: "Data" },
+    { path: "/settings", icon: Settings, label: "Settings" },
   ];
 
   const teacherNav = [
