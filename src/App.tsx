@@ -10,6 +10,7 @@ import StudentProfile from "./pages/StudentProfile";
 import AllClasses from "./pages/AllClasses";
 import RetentionDashboard from "./pages/RetentionDashboard";
 import Admin from "./pages/Admin";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
