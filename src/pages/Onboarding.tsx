@@ -91,7 +91,6 @@ export default function Onboarding() {
     if (!schoolId) return;
     setLoading(true);
     try {
-      // Upload logo if present
       let logoUrl: string | null = null;
       if (logoFile) {
         const ext = logoFile.name.split(".").pop();
@@ -106,14 +105,16 @@ export default function Onboarding() {
         logoUrl = publicData.publicUrl;
       }
 
-      // Update school name + logo
       const updates: Record<string, string> = {};
       if (schoolName.trim()) updates.name = schoolName.trim();
       if (logoUrl) updates.logo_url = logoUrl;
 
       if (Object.keys(updates).length > 0) {
-        // Use edge function to update school since users can't UPDATE schools table
-        // For now just move on — school was already created with name
+        const { error } = await supabase
+          .from("schools")
+          .update(updates)
+          .eq("id", schoolId);
+        if (error) throw error;
       }
 
       setStep(2);
