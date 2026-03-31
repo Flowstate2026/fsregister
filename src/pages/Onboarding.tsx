@@ -448,11 +448,25 @@ export default function Onboarding() {
                 <div>
                   <h1 className="text-2xl mb-2">Add Students</h1>
                   <p className="text-sm text-muted-foreground font-light">
-                    Upload a CSV with student names (first_name, last_name), or skip and add them later.
+                    Upload a CSV with your student list, or skip and add them later.
                   </p>
                 </div>
 
                 <div className="space-y-4">
+                  <button
+                    onClick={downloadTemplate}
+                    className="w-full flex items-center justify-center gap-2 text-xs text-accent hover:text-accent/80 transition-colors py-2"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download CSV template
+                  </button>
+
+                  <div className="rounded-sm bg-secondary/50 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1">Required columns</p>
+                    <p className="text-xs text-foreground/70 font-light">first_name, last_name</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1 mt-3">Optional columns</p>
+                    <p className="text-xs text-foreground/70 font-light">date_of_birth, join_date, class_name, parent_email</p>
+                  </div>
+
                   <label className="block cursor-pointer">
                     <div className="border border-dashed border-foreground/20 rounded-sm p-8 text-center hover:border-accent transition-colors">
                       <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
@@ -466,6 +480,7 @@ export default function Onboarding() {
                   {csvStudents.length > 0 && (
                     <p className="text-xs text-muted-foreground">
                       {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
+                      {csvStudents.some(s => s.class_name) && ` · ${[...new Set(csvStudents.map(s => s.class_name).filter(Boolean))].length} class(es)`}
                     </p>
                   )}
                 </div>
