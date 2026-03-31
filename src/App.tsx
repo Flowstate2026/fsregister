@@ -49,6 +49,7 @@ const App = () => (
             <Route path="/student/:studentId" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RetentionDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
