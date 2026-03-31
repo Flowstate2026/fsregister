@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, LogOut, Shield, Users, StickyNote } from "lucide-react";
+import { Home, BookOpen, BarChart3, LogOut, Shield, Users, StickyNote, Settings } from "lucide-react";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { isOwner, signOut } = useAuth();
@@ -11,7 +11,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
     { path: "/dashboard", icon: BarChart3, label: "Dashboard" },
-    { path: "/data", icon: Shield, label: "Data" },
+    { path: "/settings", icon: Settings, label: "Settings" },
   ];
 
   const teacherNav = [
