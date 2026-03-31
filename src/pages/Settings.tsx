@@ -272,6 +272,30 @@ export default function Settings() {
                         <Clock className="w-3 h-3" /> Pending
                       </span>
                     )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="p-2 text-muted-foreground hover:text-risk transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove invite for {inv.full_name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will delete the pending invite. If the teacher has already created an account, their account will not be affected.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteInvite(inv)}
+                            className="bg-risk text-risk-foreground hover:bg-risk/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 ))}
               </div>
