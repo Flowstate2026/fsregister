@@ -11,6 +11,9 @@ import AllClasses from "./pages/AllClasses";
 import RetentionDashboard from "./pages/RetentionDashboard";
 import Admin from "./pages/Admin";
 import Onboarding from "./pages/Onboarding";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DataProcessingAgreement from "./pages/DataProcessingAgreement";
+import DataManagement from "./pages/DataManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
