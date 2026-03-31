@@ -90,7 +90,7 @@ const OwnerStudents = () => {
           school_id: schoolId,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          date_of_birth: dob ? format(dob, "yyyy-MM-dd") : null,
+          date_of_birth: dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}` : null,
           join_date: format(joinDate, "yyyy-MM-dd"),
           parent_email: parentEmail.trim() || null,
         })
