@@ -1,23 +1,31 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart3, LogOut, Shield } from "lucide-react";
+import { Home, BookOpen, BarChart3, LogOut, Shield, Users, StickyNote } from "lucide-react";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { profile, isOwner, signOut } = useAuth();
+  const { isOwner, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
+  const ownerNav = [
     { path: "/", icon: Home, label: "Today" },
     { path: "/classes", icon: BookOpen, label: "Classes" },
-    ...(isOwner ? [{ path: "/dashboard", icon: BarChart3, label: "Dashboard" }, { path: "/data", icon: Shield, label: "Data" }] : []),
+    { path: "/dashboard", icon: BarChart3, label: "Dashboard" },
+    { path: "/data", icon: Shield, label: "Data" },
   ];
+
+  const teacherNav = [
+    { path: "/", icon: Home, label: "Today" },
+    { path: "/students", icon: Users, label: "Students" },
+    { path: "/notes", icon: StickyNote, label: "Notes" },
+  ];
+
+  const navItems = isOwner ? ownerNav : teacherNav;
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border/40 bg-card">
         <div className="container flex h-16 items-center justify-between">
           <h1 className="font-display text-xl text-foreground">FS Register</h1>
@@ -32,12 +40,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
 
-      {/* Content */}
       <main className="container flex-1 py-10 pb-28">
         {children}
       </main>
 
-      {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-border/40 bg-card">
         <div className="container flex h-16 items-center justify-around">
           {navItems.map(({ path, icon: Icon, label }) => (
