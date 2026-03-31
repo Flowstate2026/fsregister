@@ -13,20 +13,69 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
 
   useEffect(() => {
-    // Check URL hash for invite or recovery type
-    const hash = window.location.hash;
-    if (hash.includes("type=invite") || hash.includes("type=recovery")) {
+    let mounted = true;
+
+    const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
+    const queryParams = new URLSearchParams(window.location.search);
+    const type = hashParams.get("type") || queryParams.get("type");
+
+    const hasCallbackParams =
+      type === "invite" ||
+      type === "recovery" ||
+      hashParams.has("access_token") ||
+      hashParams.has("refresh_token") ||
+      queryParams.has("code") ||
+      queryParams.has("token") ||
+      queryParams.has("token_hash");
+
+    // Do not block the UI when callback params are present.
+    if (hasCallbackParams) {
       setIsRecovery(true);
+      setCheckingLink(false);
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+    const bootstrap = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (session) {
         setIsRecovery(true);
+      } else if (!hasCallbackParams) {
+        setIsRecovery(false);
+      }
+
+      setCheckingLink(false);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        event === "PASSWORD_RECOVERY" ||
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED"
+      ) {
+        if (session || event === "PASSWORD_RECOVERY") {
+          setIsRecovery(true);
+        }
+        setCheckingLink(false);
       }
     });
-    return () => subscription.unsubscribe();
+
+    bootstrap().catch(() => {
+      if (mounted) setCheckingLink(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -53,13 +102,26 @@ const ResetPassword = () => {
     setLoading(false);
   };
 
-  if (!isRecovery) {
+  if (checkingLink) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="w-full max-w-xs text-center animate-fade-in">
           <h1 className="font-display text-2xl text-foreground mb-4">Verifying…</h1>
           <p className="text-xs text-muted-foreground">
-            If this page doesn't update, the reset link may have expired.
+            Checking your invite/reset link…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isRecovery) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="w-full max-w-xs text-center animate-fade-in">
+          <h1 className="font-display text-2xl text-foreground mb-4">Link expired</h1>
+          <p className="text-xs text-muted-foreground">
+            This invite or reset link is no longer valid. Please request a new one.
           </p>
           <button
             onClick={() => navigate("/login")}
