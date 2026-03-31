@@ -15,6 +15,8 @@ import Onboarding from "./pages/Onboarding";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DataProcessingAgreement from "./pages/DataProcessingAgreement";
 import DataManagement from "./pages/DataManagement";
+import TeacherStudents from "./pages/TeacherStudents";
+import TeacherNotes from "./pages/TeacherNotes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
