@@ -74,7 +74,19 @@ const Login = () => {
           </p>
         </div>
 
-        <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-8">
+        {mode === "forgot" && resetSent ? (
+          <div className="text-center space-y-4">
+            <p className="text-sm text-foreground">Check your email for a password reset link.</p>
+            <button
+              type="button"
+              onClick={() => { setMode("login"); setResetSent(false); setError(""); }}
+              className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+        <form onSubmit={mode === "login" ? handleLogin : mode === "signup" ? handleSignup : handleForgotPassword} className="space-y-8">
           {mode === "signup" && (
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-[10px] font-light uppercase tracking-[0.35em] text-muted-foreground">Full Name</Label>
