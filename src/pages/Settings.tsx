@@ -194,6 +194,30 @@ export default function Settings() {
                         {t.email}
                       </p>
                     </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="p-2 text-muted-foreground hover:text-risk transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove {t.full_name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete their account and remove them from all classes. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteTeacher(t)}
+                            className="bg-risk text-risk-foreground hover:bg-risk/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 ))}
               </div>
