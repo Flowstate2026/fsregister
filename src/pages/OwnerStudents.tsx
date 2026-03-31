@@ -212,7 +212,7 @@ const OwnerStudents = () => {
                     Date of Birth
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    <Select
+                    <SelectRoot
                       value={dobDay}
                       onValueChange={setDobDay}
                     >
@@ -224,8 +224,8 @@ const OwnerStudents = () => {
                           <SelectItem key={d} value={String(d)}>{d}</SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
-                    <Select
+                    </SelectRoot>
+                    <SelectRoot
                       value={dobMonth}
                       onValueChange={setDobMonth}
                     >
@@ -237,8 +237,8 @@ const OwnerStudents = () => {
                           <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
-                    <Select
+                    </SelectRoot>
+                    <SelectRoot
                       value={dobYear}
                       onValueChange={setDobYear}
                     >
@@ -250,7 +250,7 @@ const OwnerStudents = () => {
                           <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </SelectRoot>
                   </div>
                 </div>
                 <div>
