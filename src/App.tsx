@@ -57,6 +57,7 @@ const App = () => (
             <Route path="/classes" element={<ProtectedRoute><AllClasses /></ProtectedRoute>} />
             <Route path="/register/:classId" element={<ProtectedRoute><ClassRegister /></ProtectedRoute>} />
             <Route path="/student/:studentId" element={<ProtectedRoute><StudentProfile /></ProtectedRoute>} />
+            <Route path="/owner-students" element={<ProtectedRoute><OwnerStudents /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RetentionDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
