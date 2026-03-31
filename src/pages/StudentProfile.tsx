@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { isNewStudent, needsNote, calculateAttendancePercentage, isAtRisk, getDayName, formatTime } from "@/lib/student-utils";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Plus, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Check, X, Archive, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 const StudentProfile = () => {
