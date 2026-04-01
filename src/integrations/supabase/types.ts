@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       attendance_records: {
         Row: {
+          authorised: boolean
           class_id: string
           created_at: string
           date: string
@@ -24,6 +25,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          authorised?: boolean
           class_id: string
           created_at?: string
           date: string
@@ -32,6 +34,7 @@ export type Database = {
           student_id: string
         }
         Update: {
+          authorised?: boolean
           class_id?: string
           created_at?: string
           date?: string
