@@ -21,6 +21,7 @@ const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
   const [absentIds, setAbsentIds] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
