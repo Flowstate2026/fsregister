@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart3, LogOut, Shield, Users, StickyNote, Settings } from "lucide-react";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { isOwner, signOut } = useAuth();
+  const { isOwner, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,7 +21,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { path: "/notes", icon: StickyNote, label: "Notes" },
   ];
 
-  const navItems = isOwner ? ownerNav : teacherNav;
+  const navItems = loading ? [] : isOwner ? ownerNav : teacherNav;
 
   const isActive = (path: string) => location.pathname === path;
 
