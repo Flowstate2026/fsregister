@@ -202,6 +202,7 @@ export type Database = {
         Row: {
           created_at: string
           enabled: boolean
+          event_type: string
           id: string
           school_id: string
           updated_at: string
@@ -210,6 +211,7 @@ export type Database = {
         Insert: {
           created_at?: string
           enabled?: boolean
+          event_type?: string
           id?: string
           school_id: string
           updated_at?: string
@@ -218,6 +220,7 @@ export type Database = {
         Update: {
           created_at?: string
           enabled?: boolean
+          event_type?: string
           id?: string
           school_id?: string
           updated_at?: string
@@ -227,7 +230,7 @@ export type Database = {
           {
             foreignKeyName: "school_webhooks_school_id_fkey"
             columns: ["school_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "schools"
             referencedColumns: ["id"]
           },

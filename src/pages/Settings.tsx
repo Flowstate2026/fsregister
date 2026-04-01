@@ -6,7 +6,7 @@ import AppLayout from "@/components/AppLayout";
 import SchoolDetails from "@/components/settings/SchoolDetails";
 import ManageTeachers from "@/components/settings/ManageTeachers";
 import AccountSection from "@/components/settings/AccountSection";
-import WebhooksSection from "@/components/settings/WebhooksSection";
+
 
 export default function Settings() {
   const { profile, isOwner, loading } = useAuth();
@@ -40,7 +40,7 @@ export default function Settings() {
 
         <SchoolDetails schoolId={schoolId} />
         <ManageTeachers schoolId={schoolId} />
-        <WebhooksSection schoolId={schoolId} />
+        
         <AccountSection schoolId={schoolId} schoolName={schoolName} />
       </div>
     </AppLayout>
