@@ -21,7 +21,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { path: "/notes", icon: StickyNote, label: "Notes" },
   ];
 
-  const navItems = loading ? [] : isOwner ? ownerNav : teacherNav;
+  // While loading, show owner nav as placeholder (items are just visual until role resolves)
+  const navItems = loading ? ownerNav : isOwner ? ownerNav : teacherNav;
 
   const isActive = (path: string) => location.pathname === path;
 
