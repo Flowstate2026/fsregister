@@ -86,7 +86,20 @@ const ClassRegister = () => {
       const { error } = await supabase.from("attendance_records").insert(records);
       if (error) throw error;
     },
-    onSuccess: () => { setSubmitted(true); setEditing(false); queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] }); queryClient.invalidateQueries({ queryKey: ["register-students", classId] }); queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] }); toast.success("Register saved"); navigate("/"); },
+    onSuccess: () => {
+      setSubmitted(true); setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
+      queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
+      queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
+      toast.success("Register saved");
+      // Fire webhook check for absent students (fire and forget)
+      if (absentIds.size > 0 && profile?.school_id) {
+        supabase.functions.invoke("check-attendance-webhooks", {
+          body: { student_ids: Array.from(absentIds), school_id: profile.school_id },
+        }).catch(() => {});
+      }
+      navigate("/");
+    },
     onError: () => { toast.error("Failed to save register"); },
   });
 
