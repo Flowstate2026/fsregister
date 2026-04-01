@@ -14,7 +14,7 @@ const TodayClasses = () => {
   const todayDate = format(new Date(), "yyyy-MM-dd");
 
   const { data: classes, isLoading } = useQuery({
-    queryKey: ["today-classes", today, user?.id, isOwner],
+    queryKey: ["today-classes", today, user?.id, isOwner, todayDate],
     queryFn: async () => {
       let query = supabase
         .from("classes")
@@ -29,7 +29,22 @@ const TodayClasses = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+
+      // Fetch cancelled dates that overlap today
+      const { data: cancelled } = await supabase
+        .from("cancelled_dates")
+        .select("class_id")
+        .lte("start_date", todayDate)
+        .gte("end_date", todayDate);
+
+      if (!cancelled?.length) return data;
+
+      const cancelledClassIds = new Set(cancelled.map((c) => c.class_id));
+      const allCancelled = cancelled.some((c) => c.class_id === null);
+
+      if (allCancelled) return [];
+
+      return data?.filter((cls) => !cancelledClassIds.has(cls.id)) || [];
     },
   });
 

@@ -41,6 +41,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch cancelled dates for this school
+    const { data: cancelledDates } = await supabaseAdmin
+      .from("cancelled_dates")
+      .select("class_id, start_date, end_date")
+      .eq("school_id", school_id);
+
     // Get the absent_twice webhook for this school
     const { data: webhookRows } = await supabaseAdmin
       .from("school_webhooks")
@@ -88,9 +94,20 @@ Deno.serve(async (req) => {
 
       if (!records?.length) continue;
 
+      // Filter out records on cancelled dates
+      const filteredRecords = records.filter((r) => {
+        if (!cancelledDates?.length) return true;
+        return !cancelledDates.some((cd) => {
+          const matchesClass = cd.class_id === null; // class_id check not available on attendance record level here
+          return (matchesClass || true) && r.date >= cd.start_date && r.date <= cd.end_date;
+        });
+      });
+
+      if (!filteredRecords.length) continue;
+
       // Group by date
       const byDate: Record<string, boolean[]> = {};
-      for (const r of records) {
+      for (const r of filteredRecords) {
         if (!byDate[r.date]) byDate[r.date] = [];
         byDate[r.date].push(r.present);
       }

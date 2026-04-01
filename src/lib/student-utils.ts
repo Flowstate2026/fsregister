@@ -20,10 +20,21 @@ export function needsNote(notes: StudentNote[]): boolean {
 }
 
 export function calculateAttendancePercentage(
-  records: AttendanceRecord[]
+  records: AttendanceRecord[],
+  cancelledDates?: { start_date: string; end_date: string; class_id: string | null }[]
 ): number {
   const eightWeeksAgo = subWeeks(new Date(), 8);
-  const recent = records.filter((r) => new Date(r.date) >= eightWeeksAgo);
+  let recent = records.filter((r) => new Date(r.date) >= eightWeeksAgo);
+
+  if (cancelledDates?.length) {
+    recent = recent.filter((r) => {
+      return !cancelledDates.some((cd) => {
+        const matchesClass = cd.class_id === null || cd.class_id === r.class_id;
+        return matchesClass && r.date >= cd.start_date && r.date <= cd.end_date;
+      });
+    });
+  }
+
   if (recent.length < 2) return 100;
   const present = recent.filter((r) => r.present).length;
   return Math.round((present / recent.length) * 100);

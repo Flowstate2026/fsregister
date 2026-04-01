@@ -56,6 +56,36 @@ export type Database = {
           },
         ]
       }
+      cancelled_dates: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          end_date: string
+          id: string
+          reason: string | null
+          school_id: string
+          start_date: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          school_id: string
+          start_date: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          school_id?: string
+          start_date?: string
+        }
+        Relationships: []
+      }
       class_enrollments: {
         Row: {
           class_id: string
