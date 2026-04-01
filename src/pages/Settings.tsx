@@ -41,6 +41,7 @@ export default function Settings() {
 
         <SchoolDetails schoolId={schoolId} />
         <ManageTeachers schoolId={schoolId} />
+        <CancelledDates schoolId={schoolId} />
         
         <AccountSection schoolId={schoolId} schoolName={schoolName} />
       </div>
