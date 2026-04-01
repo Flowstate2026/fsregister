@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import StudentIndicators from "@/components/StudentIndicators";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
   const [absentIds, setAbsentIds] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
@@ -84,7 +86,20 @@ const ClassRegister = () => {
       const { error } = await supabase.from("attendance_records").insert(records);
       if (error) throw error;
     },
-    onSuccess: () => { setSubmitted(true); setEditing(false); queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] }); queryClient.invalidateQueries({ queryKey: ["register-students", classId] }); queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] }); toast.success("Register saved"); navigate("/"); },
+    onSuccess: () => {
+      setSubmitted(true); setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
+      queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
+      queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
+      toast.success("Register saved");
+      // Fire webhook check for absent students (fire and forget)
+      if (absentIds.size > 0 && profile?.school_id) {
+        supabase.functions.invoke("check-attendance-webhooks", {
+          body: { student_ids: Array.from(absentIds), school_id: profile.school_id },
+        }).catch(() => {});
+      }
+      navigate("/");
+    },
     onError: () => { toast.error("Failed to save register"); },
   });
 
@@ -96,7 +111,18 @@ const ClassRegister = () => {
       const failed = results.find((r) => r.error);
       if (failed?.error) throw failed.error;
     },
-    onSuccess: () => { setEditing(false); queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] }); queryClient.invalidateQueries({ queryKey: ["register-students", classId] }); toast.success("Register updated"); },
+    onSuccess: () => {
+      setEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
+      queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
+      // Fire webhook check for absent students after edit
+      if (absentIds.size > 0 && profile?.school_id) {
+        supabase.functions.invoke("check-attendance-webhooks", {
+          body: { student_ids: Array.from(absentIds), school_id: profile.school_id },
+        }).catch(() => {});
+      }
+      toast.success("Register updated");
+    },
     onError: () => { toast.error("Failed to update register"); },
   });
 
