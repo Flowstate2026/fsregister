@@ -21,7 +21,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     { path: "/notes", icon: StickyNote, label: "Notes" },
   ];
 
-  const navItems = isOwner ? ownerNav : teacherNav;
+  const navItems = loading ? [] : isOwner ? ownerNav : teacherNav;
 
   const isActive = (path: string) => location.pathname === path;
 
