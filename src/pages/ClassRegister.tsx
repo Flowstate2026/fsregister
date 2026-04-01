@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
@@ -14,7 +14,7 @@ import {
   formatTime,
 } from "@/lib/student-utils";
 import { format } from "date-fns";
-import { ArrowLeft, Check, Pencil, Mail } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Mail, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 
 type AbsenceType = "absent" | "authorised";
@@ -22,10 +22,14 @@ type AbsenceType = "absent" | "authorised";
 const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
-  const today = format(new Date(), "yyyy-MM-dd");
-  // Maps student_id -> absence type
+
+  const testMode = localStorage.getItem("fs_test_mode") === "true";
+  const dateParam = searchParams.get("date");
+  const registerDate = (testMode && dateParam) ? dateParam : format(new Date(), "yyyy-MM-dd");
+
   const [absences, setAbsences] = useState<Map<string, AbsenceType>>(new Map());
   const [submitted, setSubmitted] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -58,9 +62,9 @@ const ClassRegister = () => {
   });
 
   const { data: existingAttendance } = useQuery({
-    queryKey: ["existing-attendance", classId, today],
+    queryKey: ["existing-attendance", classId, registerDate],
     queryFn: async () => {
-      const { data, error } = await supabase.from("attendance_records").select("*").eq("class_id", classId!).eq("date", today);
+      const { data, error } = await supabase.from("attendance_records").select("*").eq("class_id", classId!).eq("date", registerDate);
       if (error) throw error;
       return data;
     },
@@ -82,7 +86,6 @@ const ClassRegister = () => {
 
   const isLocked = (submitted || alreadySubmitted) && !editing;
 
-  // Cycle: present → absent → authorised → present
   const cycleAbsence = (studentId: string) => {
     if (isLocked) return;
     setAbsences((prev) => {
@@ -107,7 +110,7 @@ const ClassRegister = () => {
       const records = students.map((s) => ({
         student_id: s.id,
         class_id: classId,
-        date: today,
+        date: registerDate,
         present: !absences.has(s.id),
         authorised: absences.get(s.id) === "authorised",
       }));
@@ -116,18 +119,23 @@ const ClassRegister = () => {
     },
     onSuccess: () => {
       setSubmitted(true); setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
+      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, registerDate] });
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
       queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
       toast.success("Register saved");
-      // Only fire webhook for unauthorised absences
       const unauthorisedIds = Array.from(absences.entries())
         .filter(([, type]) => type === "absent")
         .map(([id]) => id);
       if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).catch(() => {});
+        }).then(({ data, error }) => {
+          if (testMode) {
+            console.log("[Test Mode] Webhook check result:", { data, error });
+          }
+        }).catch((err) => {
+          if (testMode) console.error("[Test Mode] Webhook check failed:", err);
+        });
       }
       navigate("/");
     },
@@ -149,7 +157,7 @@ const ClassRegister = () => {
     },
     onSuccess: () => {
       setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
+      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, registerDate] });
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
       const unauthorisedIds = Array.from(absences.entries())
         .filter(([, type]) => type === "absent")
@@ -157,7 +165,11 @@ const ClassRegister = () => {
       if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).catch(() => {});
+        }).then(({ data, error }) => {
+          if (testMode) console.log("[Test Mode] Webhook check result:", { data, error });
+        }).catch((err) => {
+          if (testMode) console.error("[Test Mode] Webhook check failed:", err);
+        });
       }
       toast.success("Register updated");
     },
@@ -178,6 +190,10 @@ const ClassRegister = () => {
     setEditing(false);
   };
 
+  const displayDate = registerDate === format(new Date(), "yyyy-MM-dd")
+    ? format(new Date(), "d MMM yyyy")
+    : format(new Date(registerDate + "T12:00:00"), "d MMM yyyy");
+
   return (
     <AppLayout>
       <div className="animate-fade-in">
@@ -187,13 +203,18 @@ const ClassRegister = () => {
           </button>
           <h2 className="font-display text-3xl text-foreground">{classInfo?.name || "Class Register"}</h2>
           <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-            {classInfo && formatTime(classInfo.time_of_day)} · {format(new Date(), "d MMM yyyy")}
+            {classInfo && formatTime(classInfo.time_of_day)} · {displayDate}
           </p>
+          {testMode && (
+            <div className="mt-2 flex items-center gap-2 text-[10px] text-accent">
+              <FlaskConical className="h-3 w-3" /> Test Mode — recording for {displayDate}
+            </div>
+          )}
         </div>
 
         {alreadySubmitted && !editing && !submitted && (
           <div className="mb-6 flex items-center justify-between bg-secondary/50 px-6 py-4 text-[11px] tracking-wide text-muted-foreground">
-            <span>Register already submitted for today.</span>
+            <span>Register already submitted for {testMode ? displayDate : "today"}.</span>
             <Button variant="ghost" size="sm" onClick={handleEditRegister} className="text-foreground text-[10px] uppercase tracking-[0.2em]">
               <Pencil className="h-3 w-3 mr-1" /> Edit
             </Button>
@@ -206,7 +227,6 @@ const ClassRegister = () => {
           </div>
         )}
 
-        {/* Legend */}
         {!isLocked && (
           <div className="mb-4 flex items-center gap-5 text-[10px] text-muted-foreground tracking-wide">
             <span className="flex items-center gap-1.5"><Check className="h-3 w-3" /> Present</span>
