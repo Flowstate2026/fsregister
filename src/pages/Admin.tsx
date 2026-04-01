@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import AdminWebhooks from "@/components/admin/AdminWebhooks";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -11,12 +12,10 @@ const Admin = () => {
   const [adminEmail, setAdminEmail] = useState("");
   const [adminUserPassword, setAdminUserPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setResult(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("create-school", {
@@ -31,7 +30,6 @@ const Admin = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Auto-login the new owner and redirect to onboarding
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: adminEmail,
         password: adminUserPassword,
@@ -70,53 +68,33 @@ const Admin = () => {
 
   return (
     <div style={{ maxWidth: 500, margin: "80px auto", padding: 24, fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 24 }}>Create School Account</h1>
-      <form onSubmit={handleSubmit}>
-        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>School Name</label>
-        <input
-          type="text"
-          value={schoolName}
-          onChange={(e) => setSchoolName(e.target.value)}
-          required
-          style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 16 }}
-        />
+      <h1 style={{ fontSize: 20, marginBottom: 24 }}>Admin Panel</h1>
 
-        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>Owner Email</label>
-        <input
-          type="email"
-          value={adminEmail}
-          onChange={(e) => setAdminEmail(e.target.value)}
-          required
-          style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 16 }}
-        />
+      {/* Create School */}
+      <section style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 16 }}>Create School Account</h2>
+        <form onSubmit={handleSubmit}>
+          <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>School Name</label>
+          <input type="text" value={schoolName} onChange={(e) => setSchoolName(e.target.value)} required
+            style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 16 }} />
 
-        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>Owner Password</label>
-        <input
-          type="password"
-          value={adminUserPassword}
-          onChange={(e) => setAdminUserPassword(e.target.value)}
-          required
-          minLength={6}
-          style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 24 }}
-        />
+          <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>Owner Email</label>
+          <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} required
+            style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 16 }} />
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: "8px 24px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}
-        >
-          {loading ? "Creating…" : "Create School"}
-        </button>
-      </form>
+          <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>Owner Password</label>
+          <input type="password" value={adminUserPassword} onChange={(e) => setAdminUserPassword(e.target.value)} required minLength={6}
+            style={{ width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, marginBottom: 24 }} />
 
-      {result && (
-        <div style={{ marginTop: 24, padding: 16, background: "#f0f9f0", borderRadius: 4, fontSize: 13 }}>
-          <strong>✓ Created successfully</strong>
-          <pre style={{ marginTop: 8, whiteSpace: "pre-wrap", fontSize: 12 }}>
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </div>
-      )}
+          <button type="submit" disabled={loading}
+            style={{ padding: "8px 24px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
+            {loading ? "Creating…" : "Create School"}
+          </button>
+        </form>
+      </section>
+
+      {/* Webhooks */}
+      <AdminWebhooks adminPassword={adminPassword} />
     </div>
   );
 };
