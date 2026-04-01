@@ -40,7 +40,7 @@ export default function Settings() {
 
         <SchoolDetails schoolId={schoolId} />
         <ManageTeachers schoolId={schoolId} />
-        <WebhooksSection schoolId={schoolId} />
+        
         <AccountSection schoolId={schoolId} schoolName={schoolName} />
       </div>
     </AppLayout>
