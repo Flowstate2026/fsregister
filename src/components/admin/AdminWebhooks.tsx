@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const EVENT_TYPES = [
-  { key: "absent_twice", label: "Student absent twice in a row" },
+  { key: "absent_twice", label: "Student fully absent on two separate dates" },
   { key: "below_70", label: "Attendance drops below 70%" },
   { key: "note_added", label: "Note added to student profile" },
 ] as const;
