@@ -1,0 +1,1 @@
+ALTER TABLE public.attendance_records ADD COLUMN authorised BOOLEAN NOT NULL DEFAULT false;
