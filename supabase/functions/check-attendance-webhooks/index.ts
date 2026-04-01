@@ -41,6 +41,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fetch cancelled dates for this school
+    const { data: cancelledDates } = await supabaseAdmin
+      .from("cancelled_dates")
+      .select("class_id, start_date, end_date")
+      .eq("school_id", school_id);
+
     // Get the absent_twice webhook for this school
     const { data: webhookRows } = await supabaseAdmin
       .from("school_webhooks")
