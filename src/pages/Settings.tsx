@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import SchoolDetails from "@/components/settings/SchoolDetails";
 import ManageTeachers from "@/components/settings/ManageTeachers";
+import CancelledDates from "@/components/settings/CancelledDates";
 import AccountSection from "@/components/settings/AccountSection";
 
 
