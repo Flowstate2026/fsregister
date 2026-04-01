@@ -14,8 +14,10 @@ import {
   formatTime,
 } from "@/lib/student-utils";
 import { format } from "date-fns";
-import { ArrowLeft, Check, Pencil } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Mail } from "lucide-react";
 import { toast } from "sonner";
+
+type AbsenceType = "absent" | "authorised";
 
 const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -23,7 +25,8 @@ const ClassRegister = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
-  const [absentIds, setAbsentIds] = useState<Set<string>>(new Set());
+  // Maps student_id -> absence type
+  const [absences, setAbsences] = useState<Map<string, AbsenceType>>(new Map());
   const [submitted, setSubmitted] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -67,22 +70,47 @@ const ClassRegister = () => {
 
   useEffect(() => {
     if (existingAttendance?.length) {
-      const savedAbsent = new Set(existingAttendance.filter((r) => !r.present).map((r) => r.student_id));
-      setAbsentIds(savedAbsent);
+      const saved = new Map<string, AbsenceType>();
+      existingAttendance.forEach((r) => {
+        if (!r.present) {
+          saved.set(r.student_id, r.authorised ? "authorised" : "absent");
+        }
+      });
+      setAbsences(saved);
     }
   }, [existingAttendance]);
 
   const isLocked = (submitted || alreadySubmitted) && !editing;
 
-  const toggleAbsent = (studentId: string) => {
+  // Cycle: present → absent → authorised → present
+  const cycleAbsence = (studentId: string) => {
     if (isLocked) return;
-    setAbsentIds((prev) => { const next = new Set(prev); if (next.has(studentId)) next.delete(studentId); else next.add(studentId); return next; });
+    setAbsences((prev) => {
+      const next = new Map(prev);
+      const current = next.get(studentId);
+      if (!current) {
+        next.set(studentId, "absent");
+      } else if (current === "absent") {
+        next.set(studentId, "authorised");
+      } else {
+        next.delete(studentId);
+      }
+      return next;
+    });
   };
+
+  const absentCount = absences.size;
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!students?.length || !classId) return;
-      const records = students.map((s) => ({ student_id: s.id, class_id: classId, date: today, present: !absentIds.has(s.id) }));
+      const records = students.map((s) => ({
+        student_id: s.id,
+        class_id: classId,
+        date: today,
+        present: !absences.has(s.id),
+        authorised: absences.get(s.id) === "authorised",
+      }));
       const { error } = await supabase.from("attendance_records").insert(records);
       if (error) throw error;
     },
@@ -92,10 +120,13 @@ const ClassRegister = () => {
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
       queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
       toast.success("Register saved");
-      // Fire webhook check for absent students (fire and forget)
-      if (absentIds.size > 0 && profile?.school_id) {
+      // Only fire webhook for unauthorised absences
+      const unauthorisedIds = Array.from(absences.entries())
+        .filter(([, type]) => type === "absent")
+        .map(([id]) => id);
+      if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
-          body: { student_ids: Array.from(absentIds), school_id: profile.school_id },
+          body: { student_ids: unauthorisedIds, school_id: profile.school_id },
         }).catch(() => {});
       }
       navigate("/");
@@ -106,7 +137,12 @@ const ClassRegister = () => {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!existingAttendance?.length || !classId) return;
-      const updates = existingAttendance.map((record) => supabase.from("attendance_records").update({ present: !absentIds.has(record.student_id) }).eq("id", record.id));
+      const updates = existingAttendance.map((record) =>
+        supabase.from("attendance_records").update({
+          present: !absences.has(record.student_id),
+          authorised: absences.get(record.student_id) === "authorised",
+        }).eq("id", record.id)
+      );
       const results = await Promise.all(updates);
       const failed = results.find((r) => r.error);
       if (failed?.error) throw failed.error;
@@ -115,10 +151,12 @@ const ClassRegister = () => {
       setEditing(false);
       queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, today] });
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
-      // Fire webhook check for absent students after edit
-      if (absentIds.size > 0 && profile?.school_id) {
+      const unauthorisedIds = Array.from(absences.entries())
+        .filter(([, type]) => type === "absent")
+        .map(([id]) => id);
+      if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
-          body: { student_ids: Array.from(absentIds), school_id: profile.school_id },
+          body: { student_ids: unauthorisedIds, school_id: profile.school_id },
         }).catch(() => {});
       }
       toast.success("Register updated");
@@ -128,7 +166,15 @@ const ClassRegister = () => {
 
   const handleEditRegister = () => setEditing(true);
   const handleCancelEdit = () => {
-    if (existingAttendance?.length) { setAbsentIds(new Set(existingAttendance.filter((r) => !r.present).map((r) => r.student_id))); }
+    if (existingAttendance?.length) {
+      const saved = new Map<string, AbsenceType>();
+      existingAttendance.forEach((r) => {
+        if (!r.present) {
+          saved.set(r.student_id, r.authorised ? "authorised" : "absent");
+        }
+      });
+      setAbsences(saved);
+    }
     setEditing(false);
   };
 
@@ -156,7 +202,16 @@ const ClassRegister = () => {
 
         {editing && (
           <div className="mb-6 border-l-2 border-accent bg-accent/5 px-6 py-4 text-[11px] tracking-wide text-foreground">
-            Editing register — tap students to change attendance, then save.
+            Editing register — tap to cycle: present → absent → parent notified → present.
+          </div>
+        )}
+
+        {/* Legend */}
+        {!isLocked && (
+          <div className="mb-4 flex items-center gap-5 text-[10px] text-muted-foreground tracking-wide">
+            <span className="flex items-center gap-1.5"><Check className="h-3 w-3" /> Present</span>
+            <span className="flex items-center gap-1.5"><span className="inline-flex h-4 w-4 items-center justify-center bg-risk/10 text-risk text-[9px]">A</span> Absent</span>
+            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-accent" /> Parent notified</span>
           </div>
         )}
 
@@ -171,19 +226,30 @@ const ClassRegister = () => {
             <div className="divide-y divide-border/40">
               {students.map((student) => {
                 const percent = calculateAttendancePercentage(student.attendance);
-                const absent = absentIds.has(student.id);
+                const absenceType = absences.get(student.id);
+                const isAbsent = !!absenceType;
+                const isAuthorised = absenceType === "authorised";
                 return (
-                  <div key={student.id} className={`flex w-full items-center justify-between px-5 py-4 text-left transition-all ${absent ? "bg-risk/[0.04]" : "bg-card"} ${isLocked ? "opacity-60" : ""}`}>
+                  <div key={student.id} className={`flex w-full items-center justify-between px-5 py-4 text-left transition-all ${isAbsent ? (isAuthorised ? "bg-accent/[0.04]" : "bg-risk/[0.04]") : "bg-card"} ${isLocked ? "opacity-60" : ""}`}>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => toggleAbsent(student.id)} disabled={isLocked}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-light transition-colors ${absent ? "bg-risk/10 text-risk" : "bg-foreground/5 text-foreground"} ${!isLocked ? "hover:opacity-80 active:scale-95" : ""}`}
-                        aria-label={absent ? "Mark present" : "Mark absent"}>
-                        {absent ? "A" : <Check className="h-3.5 w-3.5" />}
+                      <button onClick={() => cycleAbsence(student.id)} disabled={isLocked}
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-light transition-colors ${
+                          isAuthorised
+                            ? "bg-accent/15 text-accent"
+                            : isAbsent
+                              ? "bg-risk/10 text-risk"
+                              : "bg-foreground/5 text-foreground"
+                        } ${!isLocked ? "hover:opacity-80 active:scale-95" : ""}`}
+                        aria-label={isAuthorised ? "Mark present" : isAbsent ? "Mark parent notified" : "Mark absent"}>
+                        {isAuthorised ? <Mail className="h-3.5 w-3.5" /> : isAbsent ? "A" : <Check className="h-3.5 w-3.5" />}
                       </button>
                       <span role="link" tabIndex={0} onClick={() => navigate(`/student/${student.id}`)} onKeyDown={(e) => { if (e.key === "Enter") navigate(`/student/${student.id}`); }}
                         className="cursor-pointer text-sm font-light text-foreground hover:text-accent transition-colors">
                         {student.first_name} {student.last_name}
                       </span>
+                      {isAuthorised && (
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-accent font-medium">Notified</span>
+                      )}
                     </div>
                     <StudentIndicators isNew={isNewStudent(student.join_date)} needsNote={needsNote(student.notes)} isAtRisk={isAtRisk(percent)} attendancePercent={percent} />
                   </div>
@@ -194,7 +260,7 @@ const ClassRegister = () => {
             {!alreadySubmitted && !submitted && (
               <div className="mt-10">
                 <Button onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending} className="w-full" size="lg">
-                  {submitMutation.isPending ? "Saving…" : `Save Register · ${absentIds.size} absent`}
+                  {submitMutation.isPending ? "Saving…" : `Save Register · ${absentCount} absent`}
                 </Button>
               </div>
             )}
@@ -202,7 +268,7 @@ const ClassRegister = () => {
             {editing && (
               <div className="mt-10 flex gap-3">
                 <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="flex-1" size="lg">
-                  {updateMutation.isPending ? "Saving…" : `Save Changes · ${absentIds.size} absent`}
+                  {updateMutation.isPending ? "Saving…" : `Save Changes · ${absentCount} absent`}
                 </Button>
                 <Button variant="outline" size="lg" onClick={handleCancelEdit} disabled={updateMutation.isPending}>Cancel</Button>
               </div>

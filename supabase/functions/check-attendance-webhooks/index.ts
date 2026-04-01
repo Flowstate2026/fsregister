@@ -21,7 +21,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify the calling user
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -47,7 +46,6 @@ Deno.serve(async (req) => {
       .select("class_id, start_date, end_date")
       .eq("school_id", school_id);
 
-    // Get the absent_twice webhook for this school
     const { data: webhookRows } = await supabaseAdmin
       .from("school_webhooks")
       .select("*")
@@ -63,14 +61,9 @@ Deno.serve(async (req) => {
 
     const webhookUrl = webhookRows[0].webhook_url;
 
-    // For each student, check date-based absence logic:
-    // A "fully absent date" = a calendar date where the student had attendance records
-    // but NONE were present=true.
-    // If 2 separate fully-absent dates exist (looking at recent history), fire webhook.
     const triggeredStudents: { id: string; first_name: string; last_name: string; absent_dates: string[] }[] = [];
 
     for (const studentId of student_ids) {
-      // Get student info
       const { data: student } = await supabaseAdmin
         .from("students")
         .select("id, first_name, last_name")
@@ -79,55 +72,53 @@ Deno.serve(async (req) => {
 
       if (!student) continue;
 
-      // Get all attendance records for this student, ordered by date desc
-      // We look at the last 30 days for efficiency
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const cutoff = thirtyDaysAgo.toISOString().split("T")[0];
 
       const { data: records } = await supabaseAdmin
         .from("attendance_records")
-        .select("date, present")
+        .select("date, present, authorised, class_id")
         .eq("student_id", studentId)
         .gte("date", cutoff)
         .order("date", { ascending: false });
 
       if (!records?.length) continue;
 
-      // Filter out records on cancelled dates
+      // Filter out cancelled dates
       const filteredRecords = records.filter((r) => {
         if (!cancelledDates?.length) return true;
         return !cancelledDates.some((cd) => {
-          const matchesClass = cd.class_id === null; // class_id check not available on attendance record level here
-          return (matchesClass || true) && r.date >= cd.start_date && r.date <= cd.end_date;
+          const matchesClass = cd.class_id === null || cd.class_id === r.class_id;
+          return matchesClass && r.date >= cd.start_date && r.date <= cd.end_date;
         });
       });
 
       if (!filteredRecords.length) continue;
 
-      // Group by date
-      const byDate: Record<string, boolean[]> = {};
+      // Group by date — only count UNAUTHORISED absences
+      const byDate: Record<string, { hasPresent: boolean; hasUnauthorisedAbsence: boolean }> = {};
       for (const r of filteredRecords) {
-        if (!byDate[r.date]) byDate[r.date] = [];
-        byDate[r.date].push(r.present);
+        if (!byDate[r.date]) byDate[r.date] = { hasPresent: false, hasUnauthorisedAbsence: false };
+        if (r.present) {
+          byDate[r.date].hasPresent = true;
+        } else if (!r.authorised) {
+          byDate[r.date].hasUnauthorisedAbsence = true;
+        }
+        // authorised absences are ignored for webhook purposes
       }
 
-      // Find fully absent dates (dates where student had records but none present)
+      // A "fully unauthorised absent date" = no present marks AND at least one unauthorised absence
       const fullyAbsentDates = Object.entries(byDate)
-        .filter(([_, presents]) => presents.every((p) => !p))
+        .filter(([_, info]) => !info.hasPresent && info.hasUnauthorisedAbsence)
         .map(([date]) => date)
         .sort()
-        .reverse(); // most recent first
+        .reverse();
 
-      // If 2+ fully absent dates exist consecutively (the two most recent scheduled dates)
-      // We check if the two most recent fully-absent dates exist
       if (fullyAbsentDates.length >= 2) {
-        // Get all dates the student had any attendance (sorted desc)
         const allDates = Object.keys(byDate).sort().reverse();
-        
-        // Check if the two most recent attendance dates are both fully absent
         const mostRecentTwoAbsent = allDates.slice(0, 2).every((d) => fullyAbsentDates.includes(d));
-        
+
         if (mostRecentTwoAbsent) {
           triggeredStudents.push({
             id: student.id,
@@ -139,7 +130,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fire webhook for each triggered student
     for (const s of triggeredStudents) {
       try {
         await fetch(webhookUrl, {
