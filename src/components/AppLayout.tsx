@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart3, LogOut, Shield, Users, StickyNote, Settings } from "lucide-react";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { isOwner, signOut } = useAuth();
+  const { isOwner, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
