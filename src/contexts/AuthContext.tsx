@@ -69,39 +69,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+    let mounted = true;
 
-      try {
-        if (currentUser) {
-          setTimeout(() => {
-            fetchProfile(currentUser).finally(() => setLoading(false));
-          }, 0);
-          return;
-        }
-
-        setProfile(null);
-        setRoles([]);
-      } finally {
-        if (!currentUser) setLoading(false);
-      }
-    });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
+    const loadUser = async (currentUser: User | null) => {
+      if (!mounted) return;
       setUser(currentUser);
 
       if (currentUser) {
-        await fetchProfile(currentUser);
+        try {
+          await fetchProfile(currentUser);
+        } catch (e) {
+          console.error("Failed to fetch profile:", e);
+        }
+      } else {
+        setProfile(null);
+        setRoles([]);
       }
 
-      setLoading(false);
+      if (mounted) setLoading(false);
+    };
+
+    // Initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for changes (sign-in, sign-out, token refresh)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Skip INITIAL_SESSION since getSession handles it
+      if (_event === "INITIAL_SESSION") return;
+      loadUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
