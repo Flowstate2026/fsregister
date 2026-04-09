@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
@@ -22,7 +22,6 @@ type AbsenceType = "absent" | "authorised";
 const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
 
@@ -128,7 +127,6 @@ const ClassRegister = () => {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
         }).catch(() => {});
-        });
       }
       navigate("/");
     },
@@ -159,7 +157,6 @@ const ClassRegister = () => {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
         }).catch(() => {});
-        });
       }
       toast.success("Register updated");
     },
@@ -180,9 +177,7 @@ const ClassRegister = () => {
     setEditing(false);
   };
 
-  const displayDate = registerDate === format(new Date(), "yyyy-MM-dd")
-    ? format(new Date(), "d MMM yyyy")
-    : format(new Date(registerDate + "T12:00:00"), "d MMM yyyy");
+  const displayDate = format(new Date(), "d MMM yyyy");
 
   return (
     <AppLayout>
@@ -195,6 +190,10 @@ const ClassRegister = () => {
           <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
             {classInfo && formatTime(classInfo.time_of_day)} · {displayDate}
           </p>
+        </div>
+
+        {alreadySubmitted && !editing && !submitted && (
+          <div className="mb-6 flex items-center justify-between bg-secondary/50 px-6 py-4 text-[11px] tracking-wide text-muted-foreground">
             <span>Register already submitted for today.</span>
             <Button variant="ghost" size="sm" onClick={handleEditRegister} className="text-foreground text-[10px] uppercase tracking-[0.2em]">
               <Pencil className="h-3 w-3 mr-1" /> Edit

@@ -13,19 +13,16 @@ const Admin = () => {
   const [adminUserPassword, setAdminUserPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Test mode
-  const [testMode, setTestMode] = useState(() => localStorage.getItem("fs_test_mode") === "true");
-
-  useEffect(() => {
-    localStorage.setItem("fs_test_mode", testMode ? "true" : "false");
-  }, [testMode]);
-
   // Webhook check
   const [webhookSchoolId, setWebhookSchoolId] = useState("");
   const [webhookStudentIds, setWebhookStudentIds] = useState("");
   const [webhookRunning, setWebhookRunning] = useState(false);
   const [webhookResult, setWebhookResult] = useState<string | null>(null);
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+
+  // Seed test data
+  const [seedRunning, setSeedRunning] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (authenticated) {
@@ -42,18 +39,9 @@ const Admin = () => {
     setWebhookRunning(true);
     setWebhookResult(null);
     try {
-      // If student IDs provided, use them; otherwise fetch all students for school
       let studentIds: string[] = [];
       if (webhookStudentIds.trim()) {
         studentIds = webhookStudentIds.split(",").map((s) => s.trim()).filter(Boolean);
-      } else {
-        // Fetch all student IDs for the school via admin
-        const { data } = await supabase.functions.invoke("admin-list-schools", {
-          body: { admin_password: adminPassword },
-        });
-        // We need to get students - let's use the edge function with all students
-        // The edge function will handle fetching
-        toast.info("Fetching all students for school...");
       }
 
       const { data, error } = await supabase.functions.invoke("check-attendance-webhooks", {
@@ -71,6 +59,26 @@ const Admin = () => {
       setWebhookResult(`Error: ${(err as Error).message}`);
     } finally {
       setWebhookRunning(false);
+    }
+  };
+
+  const handleSeedTestData = async () => {
+    if (!webhookSchoolId) { toast.error("Select a school first"); return; }
+    setSeedRunning(true);
+    setSeedResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-seed-test-data", {
+        body: { admin_password: adminPassword, school_id: webhookSchoolId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setSeedResult(JSON.stringify(data, null, 2));
+      toast.success("Test data seeded successfully");
+    } catch (err) {
+      setSeedResult(`Error: ${(err as Error).message}`);
+      toast.error("Failed to seed test data");
+    } finally {
+      setSeedRunning(false);
     }
   };
 
@@ -135,33 +143,6 @@ const Admin = () => {
     <div style={{ maxWidth: 500, margin: "80px auto", padding: 24, fontFamily: "system-ui" }}>
       <h1 style={{ fontSize: 20, marginBottom: 24 }}>Admin Panel</h1>
 
-      {/* Test Mode Toggle */}
-      <section style={{ marginBottom: 48, padding: 16, border: "1px solid #e0c8a0", background: testMode ? "#fdf6e3" : "#fafafa", borderRadius: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <h2 style={{ fontSize: 16, marginBottom: 4 }}>🧪 Test Mode</h2>
-            <p style={{ fontSize: 12, color: "#666" }}>
-              When enabled, the Today view shows all classes with a date picker so you can submit registers for any date.
-            </p>
-          </div>
-          <button
-            onClick={() => setTestMode(!testMode)}
-            style={{
-              padding: "6px 16px",
-              background: testMode ? "#C4704B" : "#ddd",
-              color: testMode ? "#fff" : "#333",
-              border: "none",
-              borderRadius: 2,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
-            }}
-          >
-            {testMode ? "ON" : "OFF"}
-          </button>
-        </div>
-      </section>
-
       {/* Create School */}
       <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 16, marginBottom: 16 }}>Create School Account</h2>
@@ -212,17 +193,33 @@ const Admin = () => {
           style={{ ...inputStyle, marginBottom: 16 }}
         />
 
-        <button
-          onClick={handleRunWebhookCheck}
-          disabled={webhookRunning}
-          style={{ padding: "8px 24px", background: "#C4704B", color: "#fff", border: "none", borderRadius: 2, cursor: webhookRunning ? "wait" : "pointer" }}
-        >
-          {webhookRunning ? "Running…" : "Run Webhook Check"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handleRunWebhookCheck}
+            disabled={webhookRunning}
+            style={{ padding: "8px 24px", background: "#C4704B", color: "#fff", border: "none", borderRadius: 2, cursor: webhookRunning ? "wait" : "pointer" }}
+          >
+            {webhookRunning ? "Running…" : "Run Webhook Check"}
+          </button>
+
+          <button
+            onClick={handleSeedTestData}
+            disabled={seedRunning || !webhookSchoolId}
+            style={{ padding: "8px 24px", background: "#4B7BC4", color: "#fff", border: "none", borderRadius: 2, cursor: seedRunning ? "wait" : "pointer" }}
+          >
+            {seedRunning ? "Seeding…" : "Seed Test Data"}
+          </button>
+        </div>
 
         {webhookResult && (
           <pre style={{ marginTop: 12, padding: 12, background: "#f5f5f5", fontSize: 11, overflow: "auto", maxHeight: 300, borderRadius: 4 }}>
             {webhookResult}
+          </pre>
+        )}
+
+        {seedResult && (
+          <pre style={{ marginTop: 12, padding: 12, background: "#eef4ff", fontSize: 11, overflow: "auto", maxHeight: 300, borderRadius: 4 }}>
+            {seedResult}
           </pre>
         )}
       </section>
