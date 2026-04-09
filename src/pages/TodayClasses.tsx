@@ -27,10 +27,8 @@ const TodayClasses = () => {
         .select("*, class_enrollments(count)")
         .order("time_of_day");
 
-      // In test mode, show ALL classes regardless of day
-      if (!testMode) {
-        query = query.eq("day_of_week", today);
-      }
+      // Always filter by day — in test mode use the selected date's day
+      query = query.eq("day_of_week", today);
 
       // Teachers only see their assigned classes
       if (!isOwner && user) {
