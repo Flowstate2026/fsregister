@@ -14,7 +14,7 @@ import {
   formatTime,
 } from "@/lib/student-utils";
 import { format } from "date-fns";
-import { ArrowLeft, Check, Pencil, Mail, FlaskConical } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 type AbsenceType = "absent" | "authorised";
@@ -26,9 +26,7 @@ const ClassRegister = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
 
-  const testMode = localStorage.getItem("fs_test_mode") === "true";
-  const dateParam = searchParams.get("date");
-  const registerDate = (testMode && dateParam) ? dateParam : format(new Date(), "yyyy-MM-dd");
+  const registerDate = format(new Date(), "yyyy-MM-dd");
 
   const [absences, setAbsences] = useState<Map<string, AbsenceType>>(new Map());
   const [submitted, setSubmitted] = useState(false);
@@ -129,12 +127,7 @@ const ClassRegister = () => {
       if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).then(({ data, error }) => {
-          if (testMode) {
-            console.log("[Test Mode] Webhook check result:", { data, error });
-          }
-        }).catch((err) => {
-          if (testMode) console.error("[Test Mode] Webhook check failed:", err);
+        }).catch(() => {});
         });
       }
       navigate("/");
@@ -165,10 +158,7 @@ const ClassRegister = () => {
       if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions.invoke("check-attendance-webhooks", {
           body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).then(({ data, error }) => {
-          if (testMode) console.log("[Test Mode] Webhook check result:", { data, error });
-        }).catch((err) => {
-          if (testMode) console.error("[Test Mode] Webhook check failed:", err);
+        }).catch(() => {});
         });
       }
       toast.success("Register updated");
@@ -205,16 +195,7 @@ const ClassRegister = () => {
           <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
             {classInfo && formatTime(classInfo.time_of_day)} · {displayDate}
           </p>
-          {testMode && (
-            <div className="mt-2 flex items-center gap-2 text-[10px] text-accent">
-              <FlaskConical className="h-3 w-3" /> Test Mode — recording for {displayDate}
-            </div>
-          )}
-        </div>
-
-        {alreadySubmitted && !editing && !submitted && (
-          <div className="mb-6 flex items-center justify-between bg-secondary/50 px-6 py-4 text-[11px] tracking-wide text-muted-foreground">
-            <span>Register already submitted for {testMode ? displayDate : "today"}.</span>
+            <span>Register already submitted for today.</span>
             <Button variant="ghost" size="sm" onClick={handleEditRegister} className="text-foreground text-[10px] uppercase tracking-[0.2em]">
               <Pencil className="h-3 w-3 mr-1" /> Edit
             </Button>

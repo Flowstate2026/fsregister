@@ -1,36 +1,27 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import { getTodayDayOfWeek, getDayName, formatTime } from "@/lib/student-utils";
-import { Clock, Users, ChevronRight, Check, FlaskConical } from "lucide-react";
+import { Clock, Users, ChevronRight, Check } from "lucide-react";
 import { format } from "date-fns";
 
 const TodayClasses = () => {
   const navigate = useNavigate();
   const { user, isOwner } = useAuth();
-  const testMode = localStorage.getItem("fs_test_mode") === "true";
-
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const selectedDayOfWeek = new Date(selectedDate + "T12:00:00").getDay();
-
-  const today = testMode ? selectedDayOfWeek : getTodayDayOfWeek();
-  const todayDate = testMode ? selectedDate : format(new Date(), "yyyy-MM-dd");
+  const today = getTodayDayOfWeek();
+  const todayDate = format(new Date(), "yyyy-MM-dd");
 
   const { data: classes, isLoading } = useQuery({
-    queryKey: ["today-classes", today, user?.id, isOwner, todayDate, testMode],
+    queryKey: ["today-classes", today, user?.id, isOwner, todayDate],
     queryFn: async () => {
       let query = supabase
         .from("classes")
         .select("*, class_enrollments(count)")
-        .order("time_of_day");
+        .order("time_of_day")
+        .eq("day_of_week", today);
 
-      // Always filter by day — in test mode use the selected date's day
-      query = query.eq("day_of_week", today);
-
-      // Teachers only see their assigned classes
       if (!isOwner && user) {
         query = query.eq("teacher_id", user.id);
       }
@@ -38,7 +29,6 @@ const TodayClasses = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch cancelled dates that overlap selected date
       const { data: cancelled } = await supabase
         .from("cancelled_dates")
         .select("class_id")
@@ -56,7 +46,6 @@ const TodayClasses = () => {
     },
   });
 
-  // Fetch attendance for selected date to check completion status
   const classIds = classes?.map((c) => c.id) || [];
   const { data: todayAttendance } = useQuery({
     queryKey: ["today-attendance-status", todayDate, classIds],
@@ -78,23 +67,8 @@ const TodayClasses = () => {
     <AppLayout>
       <div className="animate-fade-in">
         <div className="mb-12">
-          <h2 className="font-display text-3xl text-foreground">
-            {testMode ? "Classes" : "Today's Classes"}
-          </h2>
-          {testMode ? (
-            <div className="mt-3 flex items-center gap-3">
-              <FlaskConical className="h-3.5 w-3.5 text-accent" />
-              <span className="text-[10px] uppercase tracking-[0.2em] text-accent">Test Mode</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="ml-2 bg-secondary px-3 py-1.5 text-xs text-foreground border border-border/40 rounded"
-              />
-            </div>
-          ) : (
-            <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">{getDayName(today)}</p>
-          )}
+          <h2 className="font-display text-3xl text-foreground">Today's Classes</h2>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">{getDayName(today)}</p>
         </div>
 
         {isLoading ? (
@@ -105,7 +79,7 @@ const TodayClasses = () => {
           </div>
         ) : !classes?.length ? (
           <div className="bg-card p-14 text-center shadow-[var(--shadow-card)]">
-            <p className="text-sm font-light text-muted-foreground">No classes scheduled{testMode ? " for this school" : " today"}</p>
+            <p className="text-sm font-light text-muted-foreground">No classes scheduled today</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -114,7 +88,7 @@ const TodayClasses = () => {
               return (
                 <button
                   key={cls.id}
-                  onClick={() => navigate(`/register/${cls.id}${testMode ? `?date=${todayDate}` : ""}`)}
+                  onClick={() => navigate(`/register/${cls.id}`)}
                   className="flex w-full items-center justify-between bg-card px-6 py-6 text-left shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] active:scale-[0.995]"
                 >
                   <div className="flex items-center gap-4">
@@ -124,17 +98,12 @@ const TodayClasses = () => {
                       </div>
                     )}
                     <div>
-                      <h3 className="font-display text-lg text-foreground">
-                        {cls.name}
-                      </h3>
+                      <h3 className="font-display text-lg text-foreground">{cls.name}</h3>
                       <div className="mt-2.5 flex items-center gap-5 text-[11px] font-light tracking-wide text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                           <Clock className="h-3 w-3" />
                           {formatTime(cls.time_of_day)}
                         </span>
-                        {testMode && (
-                          <span className="text-accent/70">{getDayName(cls.day_of_week)}</span>
-                        )}
                         <span className="flex items-center gap-1.5">
                           <Users className="h-3 w-3" />
                           {(cls.class_enrollments as any)?.[0]?.count ?? 0} students
