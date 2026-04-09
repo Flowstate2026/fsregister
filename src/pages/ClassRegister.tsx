@@ -1,23 +1,31 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClassStudents } from "@/hooks/useStudentWithDetails";
 import AppLayout from "@/components/AppLayout";
 import StudentIndicators from "@/components/StudentIndicators";
 import { Button } from "@/components/ui/button";
 import {
-  isNewStudent,
-  needsNote,
   calculateAttendancePercentage,
-  isAtRisk,
   formatTime,
 } from "@/lib/student-utils";
+import {
+  cycleAbsenceType,
+  parseAttendanceToAbsences,
+  buildAttendanceRecords,
+  buildAttendanceUpdates,
+  getAbsenceRowBgClass,
+  getAbsenceStyleClass,
+  getAbsenceLabel,
+  isRegisterLocked,
+  getUnauthorisedAbsenceIds,
+  type AbsenceType,
+} from "@/lib/attendance-utils";
 import { format } from "date-fns";
 import { ArrowLeft, Check, Pencil, Mail } from "lucide-react";
 import { toast } from "sonner";
-
-type AbsenceType = "absent" | "authorised";
 
 const ClassRegister = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -40,23 +48,8 @@ const ClassRegister = () => {
     },
   });
 
-  const { data: students, isLoading } = useQuery({
-    queryKey: ["register-students", classId],
-    queryFn: async () => {
-      const { data: enrollments, error } = await supabase.from("class_enrollments").select("student_id, students(*)").eq("class_id", classId!);
-      if (error) throw error;
-      const studentList = enrollments?.map((e) => e.students).filter((s): s is NonNullable<typeof s> => s !== null && !s.archived).sort((a, b) => a.last_name.localeCompare(b.last_name));
-      if (!studentList?.length) return [];
-      const studentIds = studentList.map((s) => s.id);
-      const { data: attendance } = await supabase.from("attendance_records").select("*").in("student_id", studentIds);
-      const { data: notes } = await supabase.from("student_notes").select("*").in("student_id", studentIds);
-      return studentList.map((student) => ({
-        ...student,
-        attendance: attendance?.filter((a) => a.student_id === student.id) || [],
-        notes: notes?.filter((n) => n.student_id === student.id) || [],
-      }));
-    },
-  });
+  // Fetch students with attendance/notes using new hook
+  const { data: students, isLoading } = useClassStudents(classId);
 
   const { data: existingAttendance } = useQuery({
     queryKey: ["existing-attendance", classId, registerDate],
@@ -68,30 +61,24 @@ const ClassRegister = () => {
   });
 
   const alreadySubmitted = (existingAttendance?.length ?? 0) > 0;
+  const isLocked = isRegisterLocked(submitted, alreadySubmitted, editing);
+  const absentCount = absences.size;
 
+  // Load existing attendance into state
   useEffect(() => {
     if (existingAttendance?.length) {
-      const saved = new Map<string, AbsenceType>();
-      existingAttendance.forEach((r) => {
-        if (!r.present) {
-          saved.set(r.student_id, r.authorised ? "authorised" : "absent");
-        }
-      });
-      setAbsences(saved);
+      setAbsences(parseAttendanceToAbsences(existingAttendance));
     }
   }, [existingAttendance]);
 
-  const isLocked = (submitted || alreadySubmitted) && !editing;
-
+  // Handle absence cycling
   const cycleAbsence = (studentId: string) => {
     if (isLocked) return;
     setAbsences((prev) => {
       const next = new Map(prev);
-      const current = next.get(studentId);
-      if (!current) {
-        next.set(studentId, "absent");
-      } else if (current === "absent") {
-        next.set(studentId, "authorised");
+      const newType = cycleAbsenceType(next.get(studentId));
+      if (newType) {
+        next.set(studentId, newType);
       } else {
         next.delete(studentId);
       }
@@ -99,80 +86,93 @@ const ClassRegister = () => {
     });
   };
 
-  const absentCount = absences.size;
-
+  // Submit new register
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!students?.length || !classId) return;
-      const records = students.map((s) => ({
-        student_id: s.id,
-        class_id: classId,
-        date: registerDate,
-        present: !absences.has(s.id),
-        authorised: absences.get(s.id) === "authorised",
-      }));
-      const { error } = await supabase.from("attendance_records").insert(records);
+      const records = buildAttendanceRecords(
+        students.map((s) => s.id),
+        classId,
+        registerDate,
+        absences
+      );
+      const { error } = await supabase
+        .from("attendance_records")
+        .insert(records);
       if (error) throw error;
     },
     onSuccess: () => {
-      setSubmitted(true); setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, registerDate] });
+      setSubmitted(true);
+      setEditing(false);
+      queryClient.invalidateQueries({
+        queryKey: ["existing-attendance", classId, registerDate],
+      });
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
       queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
       toast.success("Register saved");
-      const unauthorisedIds = Array.from(absences.entries())
-        .filter(([, type]) => type === "absent")
-        .map(([id]) => id);
+
+      const unauthorisedIds = getUnauthorisedAbsenceIds(absences);
       if (unauthorisedIds.length > 0 && profile?.school_id) {
-        supabase.functions.invoke("check-attendance-webhooks", {
-          body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).catch(() => {});
+        supabase.functions
+          .invoke("check-attendance-webhooks", {
+            body: {
+              student_ids: unauthorisedIds,
+              school_id: profile.school_id,
+            },
+          })
+          .catch(() => {});
       }
       navigate("/");
     },
-    onError: () => { toast.error("Failed to save register"); },
+    onError: () => {
+      toast.error("Failed to save register");
+    },
   });
 
+  // Update existing register
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!existingAttendance?.length || !classId) return;
-      const updates = existingAttendance.map((record) =>
-        supabase.from("attendance_records").update({
-          present: !absences.has(record.student_id),
-          authorised: absences.get(record.student_id) === "authorised",
-        }).eq("id", record.id)
+      const updates = buildAttendanceUpdates(existingAttendance, absences);
+      const results = await Promise.all(
+        updates.map((u) =>
+          supabase
+            .from("attendance_records")
+            .update(u.updates)
+            .eq("id", u.id)
+        )
       );
-      const results = await Promise.all(updates);
       const failed = results.find((r) => r.error);
       if (failed?.error) throw failed.error;
     },
     onSuccess: () => {
       setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["existing-attendance", classId, registerDate] });
+      queryClient.invalidateQueries({
+        queryKey: ["existing-attendance", classId, registerDate],
+      });
       queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
-      const unauthorisedIds = Array.from(absences.entries())
-        .filter(([, type]) => type === "absent")
-        .map(([id]) => id);
+      const unauthorisedIds = getUnauthorisedAbsenceIds(absences);
       if (unauthorisedIds.length > 0 && profile?.school_id) {
-        supabase.functions.invoke("check-attendance-webhooks", {
-          body: { student_ids: unauthorisedIds, school_id: profile.school_id },
-        }).catch(() => {});
+        supabase.functions
+          .invoke("check-attendance-webhooks", {
+            body: {
+              student_ids: unauthorisedIds,
+              school_id: profile.school_id,
+            },
+          })
+          .catch(() => {});
       }
       toast.success("Register updated");
     },
-    onError: () => { toast.error("Failed to update register"); },
+    onError: () => {
+      toast.error("Failed to update register");
+    },
   });
 
   const handleEditRegister = () => setEditing(true);
   const handleCancelEdit = () => {
     if (existingAttendance?.length) {
-      const saved = new Map<string, AbsenceType>();
-      existingAttendance.forEach((r) => {
-        if (!r.present) {
-          saved.set(r.student_id, r.authorised ? "authorised" : "absent");
-        }
-      });
-      setAbsences(saved);
+      setAbsences(parseAttendanceToAbsences(existingAttendance));
     }
     setEditing(false);
   };
@@ -227,65 +227,98 @@ const ClassRegister = () => {
               {students.map((student) => {
                 const percent = calculateAttendancePercentage(student.attendance);
                 const absenceType = absences.get(student.id);
-                const isAbsent = !!absenceType;
-                const isAuthorised = absenceType === "authorised";
+                const rowBgClass = getAbsenceRowBgClass(absenceType);
+                const buttonStyleClass = getAbsenceStyleClass(absenceType);
+                const label = getAbsenceLabel(absenceType);
+
                 return (
-                  <div key={student.id} className={`flex w-full items-center justify-between px-5 py-4 text-left transition-all ${isAbsent ? (isAuthorised ? "bg-accent/[0.04]" : "bg-risk/[0.04]") : "bg-card"} ${isLocked ? "opacity-60" : ""}`}>
+                  <div
+                    key={student.id}
+                    className={`flex w-full items-center justify-between px-5 py-4 text-left transition-all ${rowBgClass} ${
+                      isLocked ? "opacity-60" : ""
+                    }`}
+                  >
                     <div className="flex items-center gap-4">
-                      <button onClick={() => cycleAbsence(student.id)} disabled={isLocked}
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-light transition-colors ${
-                          isAuthorised
-                            ? "bg-accent/15 text-accent"
-                            : isAbsent
-                              ? "bg-risk/10 text-risk"
-                              : "bg-foreground/5 text-foreground"
-                        } ${!isLocked ? "hover:opacity-80 active:scale-95" : ""}`}
-                        aria-label={isAuthorised ? "Mark present" : isAbsent ? "Mark parent notified" : "Mark absent"}>
-                        {isAuthorised ? <Mail className="h-3.5 w-3.5" /> : isAbsent ? "A" : <Check className="h-3.5 w-3.5" />}
+                      <button
+                        onClick={() => cycleAbsence(student.id)}
+                        disabled={isLocked}
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center text-[10px] font-light transition-colors ${buttonStyleClass} ${
+                          !isLocked
+                            ? "hover:opacity-80 active:scale-95"
+                            : ""
+                        }`}
+                        aria-label={label}
+                        title={label}
+                      >
+                        {absenceType === "authorised" ? (
+                          <Mail className="h-3.5 w-3.5" />
+                        ) : absenceType ? (
+                          "A"
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
                       </button>
-                      <span role="link" tabIndex={0} onClick={() => navigate(`/student/${student.id}`)} onKeyDown={(e) => { if (e.key === "Enter") navigate(`/student/${student.id}`); }}
-                        className="cursor-pointer text-sm font-light text-foreground hover:text-accent transition-colors">
+                      <span
+                        role="link"
+                        tabIndex={0}
+                        onClick={() => navigate(`/student/${student.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")
+                            navigate(`/student/${student.id}`);
+                        }}
+                        className="cursor-pointer text-sm font-light text-foreground hover:text-accent transition-colors"
+                      >
                         {student.first_name} {student.last_name}
                       </span>
-                      {isAuthorised && (
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-accent font-medium">Notified</span>
-                      )}
                     </div>
-                    <StudentIndicators isNew={isNewStudent(student.join_date)} needsNote={needsNote(student.notes)} isAtRisk={isAtRisk(percent)} attendancePercent={percent} />
+                    <StudentIndicators
+                      student={student}
+                      attendancePercent={percent}
+                    />
                   </div>
                 );
               })}
             </div>
 
-            {!alreadySubmitted && !submitted && (
-              <div className="mt-10">
-                <Button onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending} className="w-full" size="lg">
-                  {submitMutation.isPending ? "Saving…" : `Save Register · ${absentCount} absent`}
-                </Button>
-              </div>
-            )}
-
-            {editing && (
-              <div className="mt-10 flex gap-3">
-                <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="flex-1" size="lg">
-                  {updateMutation.isPending ? "Saving…" : `Save Changes · ${absentCount} absent`}
-                </Button>
-                <Button variant="outline" size="lg" onClick={handleCancelEdit} disabled={updateMutation.isPending}>Cancel</Button>
-              </div>
-            )}
-
-            {(submitted || alreadySubmitted) && !editing && (
-              <div className="mt-10">
-                <div className="flex items-center justify-center gap-2 border-l-2 border-accent bg-accent/5 p-5 text-[11px] font-light uppercase tracking-[0.2em] text-foreground">
-                  <Check className="h-3.5 w-3.5" /> Register saved
-                </div>
-                {submitted && (
-                  <button onClick={handleEditRegister} className="mt-4 flex w-full items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors">
-                    <Pencil className="h-3 w-3" /> Made a mistake? Edit register
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="mt-8 flex gap-3">
+              {alreadySubmitted && editing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => updateMutation.mutate()}
+                    disabled={updateMutation.isPending}
+                    className="flex-1"
+                  >
+                    {updateMutation.isPending ? "Saving…" : "Save Changes"}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/")}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => submitMutation.mutate()}
+                    disabled={submitMutation.isPending}
+                    className="flex-1"
+                  >
+                    {submitMutation.isPending
+                      ? "Saving…"
+                      : `Save Register${absentCount > 0 ? ` (${absentCount})` : ""}`}
+                  </Button>
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
