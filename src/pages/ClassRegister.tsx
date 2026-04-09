@@ -26,9 +26,7 @@ const ClassRegister = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
 
-  const testMode = localStorage.getItem("fs_test_mode") === "true";
-  const dateParam = searchParams.get("date");
-  const registerDate = (testMode && dateParam) ? dateParam : format(new Date(), "yyyy-MM-dd");
+  const registerDate = format(new Date(), "yyyy-MM-dd");
 
   const [absences, setAbsences] = useState<Map<string, AbsenceType>>(new Map());
   const [submitted, setSubmitted] = useState(false);

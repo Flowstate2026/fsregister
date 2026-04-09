@@ -5,19 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
 import { getTodayDayOfWeek, getDayName, formatTime } from "@/lib/student-utils";
-import { Clock, Users, ChevronRight, Check, FlaskConical } from "lucide-react";
+import { Clock, Users, ChevronRight, Check } from "lucide-react";
 import { format } from "date-fns";
 
 const TodayClasses = () => {
   const navigate = useNavigate();
   const { user, isOwner } = useAuth();
-  const testMode = localStorage.getItem("fs_test_mode") === "true";
-
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const selectedDayOfWeek = new Date(selectedDate + "T12:00:00").getDay();
-
-  const today = testMode ? selectedDayOfWeek : getTodayDayOfWeek();
-  const todayDate = testMode ? selectedDate : format(new Date(), "yyyy-MM-dd");
+  const today = getTodayDayOfWeek();
+  const todayDate = format(new Date(), "yyyy-MM-dd");
 
   const { data: classes, isLoading } = useQuery({
     queryKey: ["today-classes", today, user?.id, isOwner, todayDate, testMode],
