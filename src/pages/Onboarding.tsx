@@ -105,7 +105,7 @@ export default function Onboarding() {
         logoUrl = publicData.publicUrl;
       }
 
-      const updates: Record<string, string> = {};
+      const updates: { name?: string; logo_url?: string } = {};
       if (schoolName.trim()) updates.name = schoolName.trim();
       if (logoUrl) updates.logo_url = logoUrl;
 
