@@ -11,7 +11,8 @@ type Profile = Tables<"profiles">;
 export interface StudentWithDetails extends Student {
   attendance: AttendanceRecord[];
   notes: (StudentNote & { author_name: string | null })[];
-  enrollments?: (ClassEnrollment & { classes: { name: string } | null })[];
+  enrollments?: (ClassEnrollment & { classes: { name: string; day_of_week: number; time_of_day: string } | null })[];
+  class_enrollments?: (ClassEnrollment & { classes: { name: string } | null })[];
   className?: string;
 }
 
@@ -82,9 +83,9 @@ export function useStudent(
       if (includeEnrollments) {
         const { data: enrollmentData } = await supabase
           .from("class_enrollments")
-          .select("*, classes(name)")
+          .select("*, classes(name, day_of_week, time_of_day)")
           .eq("student_id", studentId);
-        enrollments = enrollmentData || [];
+        enrollments = (enrollmentData || []) as typeof enrollments;
       }
 
       return {
@@ -239,7 +240,7 @@ export function useAllStudentsWithDetails() {
       return students!.map((s) => ({
         ...s,
         attendance: attendance?.filter((a) => a.student_id === s.id) || [],
-        notes: notes?.filter((n) => n.student_id === s.id) || [],
+        notes: (notes?.filter((n) => n.student_id === s.id) || []).map(n => ({ ...n, author_name: null })),
       })) as StudentWithDetails[];
     },
   });
