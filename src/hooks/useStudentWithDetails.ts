@@ -10,7 +10,7 @@ type Profile = Tables<"profiles">;
 
 export interface StudentWithDetails extends Student {
   attendance: AttendanceRecord[];
-  notes: (StudentNote & { author_name: string | null })[];
+  notes: (StudentNote & { author_name?: string | null })[];
   enrollments?: (ClassEnrollment & { classes: { name: string; day_of_week: number; time_of_day: string } | null })[];
   class_enrollments?: (ClassEnrollment & { classes: { name: string } | null })[];
   className?: string;
