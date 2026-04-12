@@ -37,11 +37,11 @@ export default function SchoolDetails({ schoolId }: Props) {
     setSaving(true);
     const { error } = await supabase
       .from("schools")
-      .update({ name: schoolName.trim() })
+      .update({ name: schoolName.trim(), email: schoolEmail.trim() || null })
       .eq("id", schoolId);
     setSaving(false);
-    if (error) toast.error("Failed to update school name");
-    else toast.success("School name updated");
+    if (error) toast.error("Failed to update school details");
+    else toast.success("School details updated");
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
