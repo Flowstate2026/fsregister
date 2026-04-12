@@ -116,9 +116,7 @@ const TeacherStudents = () => {
                     {student.first_name} {student.last_name}
                   </span>
                   <StudentIndicators
-                    isNew={isNewStudent(student.join_date)}
-                    needsNote={needsNote(student.notes)}
-                    isAtRisk={isAtRisk(percent)}
+                    student={student}
                     attendancePercent={percent}
                   />
                 </button>

@@ -370,9 +370,7 @@ const OwnerStudents = () => {
                   </span>
                   {!showArchived && (
                     <StudentIndicators
-                      isNew={isNewStudent(student.join_date)}
-                      needsNote={needsNote(student.notes)}
-                      isAtRisk={isAtRisk(percent)}
+                      student={student}
                       attendancePercent={percent}
                     />
                   )}
