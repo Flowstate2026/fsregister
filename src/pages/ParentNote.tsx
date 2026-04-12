@@ -36,12 +36,6 @@ export default function ParentNote() {
     }
 
     const fetchNote = async () => {
-      const { data: result, error: fnError } = await supabase.functions.invoke(
-        "get-parent-note",
-        { body: null, headers: {} }
-      );
-
-      // Use GET with query params via fetch
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-parent-note?token=${token}`;
       const res = await fetch(url, {
         headers: {
