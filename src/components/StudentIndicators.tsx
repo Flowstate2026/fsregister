@@ -1,27 +1,31 @@
 import { Star, AlertTriangle, PenLine } from "lucide-react";
+import { isNewStudent, needsNote as checkNeedsNote, isAtRisk as checkIsAtRisk } from "@/lib/student-utils";
+import type { StudentWithDetails } from "@/hooks/useStudentWithDetails";
 
 interface StudentIndicatorsProps {
-  isNew: boolean;
-  needsNote: boolean;
-  isAtRisk: boolean;
+  student: StudentWithDetails;
   attendancePercent: number;
 }
 
-const StudentIndicators = ({ isNew, needsNote, isAtRisk, attendancePercent }: StudentIndicatorsProps) => {
+const StudentIndicators = ({ student, attendancePercent }: StudentIndicatorsProps) => {
+  const isNew = isNewStudent(student.join_date);
+  const noteNeeded = checkNeedsNote(student.notes);
+  const atRisk = checkIsAtRisk(attendancePercent);
+
   return (
     <div className="flex items-center gap-2">
       {isNew && (
         <Star className="h-3.5 w-3.5 fill-gold text-gold" aria-label="New student" />
       )}
-      {needsNote && (
+      {noteNeeded && (
         <PenLine className="h-3.5 w-3.5 text-gold" aria-label="Needs note" />
       )}
-      {isAtRisk && (
+      {atRisk && (
         <AlertTriangle className="h-3.5 w-3.5 text-risk" aria-label="Low attendance" />
       )}
       <span
         className={`text-[11px] font-light tabular-nums tracking-wide ${
-          isAtRisk ? "text-risk" : "text-muted-foreground"
+          atRisk ? "text-risk" : "text-muted-foreground"
         }`}
       >
         {attendancePercent}%

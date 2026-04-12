@@ -12,6 +12,7 @@ interface Props {
 
 export default function SchoolDetails({ schoolId }: Props) {
   const [schoolName, setSchoolName] = useState("");
+  const [schoolEmail, setSchoolEmail] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -19,13 +20,14 @@ export default function SchoolDetails({ schoolId }: Props) {
   useEffect(() => {
     supabase
       .from("schools")
-      .select("name, logo_url")
+      .select("name, logo_url, email")
       .eq("id", schoolId)
       .single()
       .then(({ data }) => {
         if (data) {
           setSchoolName(data.name);
           setLogoUrl(data.logo_url);
+          setSchoolEmail(data.email || "");
         }
       });
   }, [schoolId]);
@@ -35,11 +37,11 @@ export default function SchoolDetails({ schoolId }: Props) {
     setSaving(true);
     const { error } = await supabase
       .from("schools")
-      .update({ name: schoolName.trim() })
+      .update({ name: schoolName.trim(), email: schoolEmail.trim() || null })
       .eq("id", schoolId);
     setSaving(false);
-    if (error) toast.error("Failed to update school name");
-    else toast.success("School name updated");
+    if (error) toast.error("Failed to update school details");
+    else toast.success("School details updated");
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,11 +116,23 @@ export default function SchoolDetails({ schoolId }: Props) {
           </label>
           <div className="flex gap-3">
             <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
-            <Button onClick={handleSaveName} disabled={saving} size="sm">
-              {saving ? "Saving…" : "Save"}
-            </Button>
           </div>
         </div>
+
+        {/* School email */}
+        <div className="space-y-2">
+          <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block">
+            School Email
+          </label>
+          <p className="text-[10px] text-muted-foreground">Used as the reply-to address for parent emails</p>
+          <div className="flex gap-3">
+            <Input type="email" value={schoolEmail} onChange={(e) => setSchoolEmail(e.target.value)} placeholder="hello@yourschool.com" />
+          </div>
+        </div>
+
+        <Button onClick={handleSaveName} disabled={saving} size="sm">
+          {saving ? "Saving…" : "Save"}
+        </Button>
       </CardContent>
     </Card>
   );

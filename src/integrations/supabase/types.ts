@@ -196,6 +196,70 @@ export type Database = {
         }
         Relationships: []
       }
+      note_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          note_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note_id: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_tokens_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "student_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_replies: {
+        Row: {
+          created_at: string
+          id: string
+          note_id: string
+          parent_name: string | null
+          reply_text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note_id: string
+          parent_name?: string | null
+          reply_text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note_id?: string
+          parent_name?: string | null
+          reply_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_replies_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "student_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -272,6 +336,7 @@ export type Database = {
       schools: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           logo_url: string | null
           name: string
@@ -279,6 +344,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -286,6 +352,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           logo_url?: string | null
           name?: string

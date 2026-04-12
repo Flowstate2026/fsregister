@@ -21,6 +21,7 @@ import TeacherNotes from "./pages/TeacherNotes";
 import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import ParentNote from "./pages/ParentNote";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dpa" element={<DataProcessingAgreement />} />
+            <Route path="/parent-note" element={<ParentNote />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

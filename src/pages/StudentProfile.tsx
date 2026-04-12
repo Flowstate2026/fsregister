@@ -42,6 +42,18 @@ const StudentProfile = () => {
         .select("*")
         .single();
       if (error) throw error;
+
+      // Trigger parent email in background
+      supabase.functions.invoke("send-parent-note", {
+        body: { note_id: data.id },
+      }).then(({ data: emailResult }) => {
+        if (emailResult?.email_sent) {
+          toast.success("Parent email sent");
+        }
+      }).catch(() => {
+        // Silently fail — note is saved regardless
+      });
+
       return data;
     },
     onSuccess: () => {
