@@ -114,12 +114,11 @@ Deno.serve(async (req) => {
     const appUrl = req.headers.get("origin") || "https://fsregister.lovable.app";
     const parentUrl = `${appUrl}/parent-note?token=${tokenRow.token}`;
 
-    // Send email via Lovable API
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      // No email configured — just return token
+    // Send email via Resend
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
       return new Response(
-        JSON.stringify({ success: true, token: tokenRow.token, email_sent: false, reason: "No email API configured" }),
+        JSON.stringify({ success: true, token: tokenRow.token, email_sent: false, reason: "No Resend API key configured" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -159,19 +158,32 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    // For now, log the email. Full email sending requires email domain setup.
-    console.log("Parent note email would be sent to:", student.parent_email);
-    console.log("Subject:", `A note about ${student.first_name} from ${schoolName}`);
-    console.log("Parent URL:", parentUrl);
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "FS Register <onboarding@resend.dev>",
+        to: [student.parent_email],
+        subject: `A note about ${student.first_name} from ${schoolName}`,
+        html: emailHtml,
+      }),
+    });
+
+    const emailData = await emailRes.json();
+
+    if (!emailRes.ok) {
+      console.error("Resend error:", emailData);
+      return new Response(
+        JSON.stringify({ success: true, token: tokenRow.token, email_sent: false, error: emailData }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        token: tokenRow.token,
-        email_sent: false,
-        parent_url: parentUrl,
-        message: "Token created. Email sending requires email domain setup.",
-      }),
+      JSON.stringify({ success: true, token: tokenRow.token, email_sent: true, parent_url: parentUrl }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
