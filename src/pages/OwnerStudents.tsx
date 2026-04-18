@@ -294,13 +294,50 @@ const OwnerStudents = () => {
 
               <div>
                 <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
-                  Parent Email
+                  Parent / Guardian Name
                 </label>
                 <Input
-                  type="email"
-                  value={parentEmail}
-                  onChange={(e) => setParentEmail(e.target.value)}
-                  placeholder="parent@email.com"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                    Parent Email *
+                  </label>
+                  <Input
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    placeholder="parent@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                    Parent Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={parentPhone}
+                    onChange={(e) => setParentPhone(e.target.value)}
+                    placeholder="+44…"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                  Medical Notes / Additional Needs
+                </label>
+                <textarea
+                  value={medicalNotes}
+                  onChange={(e) => setMedicalNotes(e.target.value)}
+                  rows={3}
+                  className="flex w-full border-0 border-b border-foreground/20 bg-transparent px-0 py-2 text-base font-light placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-accent transition-colors md:text-sm resize-none"
+                  placeholder="Allergies, conditions, or other relevant info"
                 />
               </div>
 
