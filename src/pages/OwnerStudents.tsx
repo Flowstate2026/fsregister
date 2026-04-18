@@ -86,6 +86,7 @@ const OwnerStudents = () => {
   const addStudentMutation = useMutation({
     mutationFn: async () => {
       if (!firstName.trim() || !lastName.trim() || !schoolId) throw new Error("Name required");
+      if (!parentEmail.trim()) throw new Error("Parent email is required");
 
       const { data: student, error } = await supabase
         .from("students")
@@ -95,7 +96,10 @@ const OwnerStudents = () => {
           last_name: lastName.trim(),
           date_of_birth: dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}` : null,
           join_date: format(joinDate, "yyyy-MM-dd"),
-          parent_email: parentEmail.trim() || null,
+          parent_name: parentName.trim() || null,
+          parent_email: parentEmail.trim(),
+          parent_phone: parentPhone.trim() || null,
+          medical_notes: medicalNotes.trim() || null,
         })
         .select("*")
         .single();
@@ -130,7 +134,10 @@ const OwnerStudents = () => {
     setDobMonth("");
     setDobYear("");
     setJoinDate(new Date());
+    setParentName("");
     setParentEmail("");
+    setParentPhone("");
+    setMedicalNotes("");
     setSelectedClassIds([]);
   };
 
