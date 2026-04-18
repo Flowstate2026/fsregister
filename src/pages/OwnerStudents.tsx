@@ -367,7 +367,7 @@ const OwnerStudents = () => {
 
               <Button
                 onClick={() => addStudentMutation.mutate()}
-                disabled={!firstName.trim() || !lastName.trim() || addStudentMutation.isPending}
+                disabled={!firstName.trim() || !lastName.trim() || !parentEmail.trim() || addStudentMutation.isPending}
                 className="w-full"
               >
                 {addStudentMutation.isPending ? "Adding…" : "Add Student"}
