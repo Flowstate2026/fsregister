@@ -38,7 +38,10 @@ const OwnerStudents = () => {
   const [dobMonth, setDobMonth] = useState("");
   const [dobYear, setDobYear] = useState("");
   const [joinDate, setJoinDate] = useState<Date>(new Date());
+  const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
+  const [parentPhone, setParentPhone] = useState("");
+  const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
   const { data: classes } = useQuery({
