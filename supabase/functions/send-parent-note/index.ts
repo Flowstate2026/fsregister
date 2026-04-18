@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     }
 
     // Build the parent note URL
-    const appUrl = req.headers.get("origin") || "https://fsregister.lovable.app";
+    const appUrl = "https://fsregister.lovable.app";
     const parentUrl = `${appUrl}/parent-note?token=${tokenRow.token}`;
 
     // Send email via Resend
