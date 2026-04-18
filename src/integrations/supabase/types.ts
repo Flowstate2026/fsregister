@@ -401,7 +401,10 @@ export type Database = {
           id: string
           join_date: string
           last_name: string
+          medical_notes: string | null
           parent_email: string | null
+          parent_name: string | null
+          parent_phone: string | null
           school_id: string
         }
         Insert: {
@@ -412,7 +415,10 @@ export type Database = {
           id?: string
           join_date?: string
           last_name: string
+          medical_notes?: string | null
           parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           school_id: string
         }
         Update: {
@@ -423,7 +429,10 @@ export type Database = {
           id?: string
           join_date?: string
           last_name?: string
+          medical_notes?: string | null
           parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           school_id?: string
         }
         Relationships: [
