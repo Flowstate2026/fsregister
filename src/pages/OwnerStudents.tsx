@@ -38,7 +38,10 @@ const OwnerStudents = () => {
   const [dobMonth, setDobMonth] = useState("");
   const [dobYear, setDobYear] = useState("");
   const [joinDate, setJoinDate] = useState<Date>(new Date());
+  const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
+  const [parentPhone, setParentPhone] = useState("");
+  const [medicalNotes, setMedicalNotes] = useState("");
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
   const { data: classes } = useQuery({
@@ -83,6 +86,7 @@ const OwnerStudents = () => {
   const addStudentMutation = useMutation({
     mutationFn: async () => {
       if (!firstName.trim() || !lastName.trim() || !schoolId) throw new Error("Name required");
+      if (!parentEmail.trim()) throw new Error("Parent email is required");
 
       const { data: student, error } = await supabase
         .from("students")
@@ -92,7 +96,10 @@ const OwnerStudents = () => {
           last_name: lastName.trim(),
           date_of_birth: dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}` : null,
           join_date: format(joinDate, "yyyy-MM-dd"),
-          parent_email: parentEmail.trim() || null,
+          parent_name: parentName.trim() || null,
+          parent_email: parentEmail.trim(),
+          parent_phone: parentPhone.trim() || null,
+          medical_notes: medicalNotes.trim() || null,
         })
         .select("*")
         .single();
@@ -127,7 +134,10 @@ const OwnerStudents = () => {
     setDobMonth("");
     setDobYear("");
     setJoinDate(new Date());
+    setParentName("");
     setParentEmail("");
+    setParentPhone("");
+    setMedicalNotes("");
     setSelectedClassIds([]);
   };
 
@@ -284,13 +294,50 @@ const OwnerStudents = () => {
 
               <div>
                 <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
-                  Parent Email
+                  Parent / Guardian Name
                 </label>
                 <Input
-                  type="email"
-                  value={parentEmail}
-                  onChange={(e) => setParentEmail(e.target.value)}
-                  placeholder="parent@email.com"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                    Parent Email *
+                  </label>
+                  <Input
+                    type="email"
+                    value={parentEmail}
+                    onChange={(e) => setParentEmail(e.target.value)}
+                    placeholder="parent@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                    Parent Phone
+                  </label>
+                  <Input
+                    type="tel"
+                    value={parentPhone}
+                    onChange={(e) => setParentPhone(e.target.value)}
+                    placeholder="+44…"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-1.5">
+                  Medical Notes / Additional Needs
+                </label>
+                <textarea
+                  value={medicalNotes}
+                  onChange={(e) => setMedicalNotes(e.target.value)}
+                  rows={3}
+                  className="flex w-full border-0 border-b border-foreground/20 bg-transparent px-0 py-2 text-base font-light placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-accent transition-colors md:text-sm resize-none"
+                  placeholder="Allergies, conditions, or other relevant info"
                 />
               </div>
 
@@ -320,7 +367,7 @@ const OwnerStudents = () => {
 
               <Button
                 onClick={() => addStudentMutation.mutate()}
-                disabled={!firstName.trim() || !lastName.trim() || addStudentMutation.isPending}
+                disabled={!firstName.trim() || !lastName.trim() || !parentEmail.trim() || addStudentMutation.isPending}
                 className="w-full"
               >
                 {addStudentMutation.isPending ? "Adding…" : "Add Student"}
