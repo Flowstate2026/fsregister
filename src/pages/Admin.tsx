@@ -244,8 +244,22 @@ const Admin = () => {
           </pre>
         )}
       </section>
+
+      {/* Update Admin Password */}
+      <section style={{ marginTop: 48, padding: 16, border: "1px solid #e5e5e5", borderRadius: 4, background: "#fafafa" }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Update Admin Password</h2>
+        <p style={{ fontSize: 12, color: "#666", marginBottom: 12, lineHeight: 1.5 }}>
+          The admin password is stored as the <code>ADMIN_SETUP_PASSWORD</code> secret. For security, it can only be changed from
+          Project Settings → Secrets. The login field above only <em>checks</em> the password — it never writes to the secret.
+        </p>
+        <p style={{ fontSize: 12, color: "#666", margin: 0 }}>
+          To rotate: open Lovable Cloud settings, find <code>ADMIN_SETUP_PASSWORD</code>, and update its value there.
+        </p>
+      </section>
     </div>
   );
 };
+
+export default Admin;
 
 export default Admin;
