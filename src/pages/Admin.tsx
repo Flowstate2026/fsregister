@@ -118,11 +118,32 @@ const Admin = () => {
     width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, fontSize: 13,
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // Verify the entered password against the stored ADMIN_SETUP_PASSWORD
+      // by calling an admin endpoint that checks it. Does NOT modify the secret.
+      const { data, error } = await supabase.functions.invoke("admin-list-schools", {
+        body: { admin_password: adminPassword },
+      });
+      if (error || (data as any)?.error) {
+        toast.error("Incorrect admin password");
+        return;
+      }
+      setAuthenticated(true);
+    } catch {
+      toast.error("Could not verify password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!authenticated) {
     return (
       <div style={{ maxWidth: 400, margin: "80px auto", padding: 24, fontFamily: "system-ui" }}>
         <h1 style={{ fontSize: 20, marginBottom: 24 }}>Admin Access</h1>
-        <form onSubmit={(e) => { e.preventDefault(); setAuthenticated(true); }}>
+        <form onSubmit={handleLogin}>
           <label style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Admin Password</label>
           <input
             type="password"
@@ -131,8 +152,8 @@ const Admin = () => {
             required
             style={{ ...inputStyle, marginBottom: 16 }}
           />
-          <button type="submit" style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer" }}>
-            Enter
+          <button type="submit" disabled={loading} style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
+            {loading ? "Checking…" : "Enter"}
           </button>
         </form>
       </div>
