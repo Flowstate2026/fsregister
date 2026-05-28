@@ -94,11 +94,30 @@ export function useStudent(
         enrollments = (enrollmentData || []) as typeof enrollments;
       }
 
+      // Fetch parent replies for any of this student's notes
+      const noteIds = (noteRows || []).map((n) => n.id);
+      let parentReplies: ParentReplyWithNote[] = [];
+      if (noteIds.length > 0) {
+        const { data: replyRows } = await supabase
+          .from("parent_replies")
+          .select("*")
+          .in("note_id", noteIds)
+          .order("created_at", { ascending: false });
+        const noteTextById = new Map(
+          (noteRows || []).map((n) => [n.id, n.note_text])
+        );
+        parentReplies = (replyRows || []).map((r) => ({
+          ...r,
+          note_text: noteTextById.get(r.note_id) || null,
+        }));
+      }
+
       return {
         ...student,
         attendance: attendance || [],
         notes,
         enrollments,
+        parentReplies,
       } as StudentWithDetails;
     },
     enabled: !!studentId,
