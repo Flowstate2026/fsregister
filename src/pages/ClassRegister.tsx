@@ -107,7 +107,7 @@ const ClassRegister = () => {
       queryClient.invalidateQueries({
         queryKey: ["existing-attendance", classId, registerDate],
       });
-      queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
+      queryClient.invalidateQueries({ queryKey: ["class-students", classId] });
       queryClient.invalidateQueries({ queryKey: ["today-attendance-status"] });
       toast.success("Register saved");
 
@@ -150,7 +150,7 @@ const ClassRegister = () => {
       queryClient.invalidateQueries({
         queryKey: ["existing-attendance", classId, registerDate],
       });
-      queryClient.invalidateQueries({ queryKey: ["register-students", classId] });
+      queryClient.invalidateQueries({ queryKey: ["class-students", classId] });
       const unauthorisedIds = getUnauthorisedAbsenceIds(absences);
       if (unauthorisedIds.length > 0 && profile?.school_id) {
         supabase.functions
