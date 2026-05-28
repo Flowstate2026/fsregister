@@ -7,10 +7,16 @@ type ClassEnrollment = Tables<"class_enrollments">;
 type AttendanceRecord = Tables<"attendance_records">;
 type StudentNote = Tables<"student_notes">;
 type Profile = Tables<"profiles">;
+type ParentReply = Tables<"parent_replies">;
+
+export interface ParentReplyWithNote extends ParentReply {
+  note_text?: string | null;
+}
 
 export interface StudentWithDetails extends Student {
   attendance: AttendanceRecord[];
   notes: (StudentNote & { author_name?: string | null })[];
+  parentReplies?: ParentReplyWithNote[];
   enrollments?: (ClassEnrollment & { classes: { name: string; day_of_week: number; time_of_day: string } | null })[];
   class_enrollments?: (ClassEnrollment & { classes: { name: string } | null })[];
   className?: string;
