@@ -315,6 +315,41 @@ const StudentProfile = () => {
             )}
           </div>
         </section>
+
+        {/* Parent replies */}
+        {studentData.parentReplies && studentData.parentReplies.length > 0 && (
+          <section className="mb-12">
+            <h3
+              className="mb-5 text-[10px] font-medium uppercase tracking-[0.35em] text-muted-foreground"
+              style={{ fontFamily: "Jost, system-ui, sans-serif", fontStyle: "normal" }}
+            >
+              Parent Replies
+            </h3>
+            <div className="space-y-3">
+              {studentData.parentReplies.map((reply) => (
+                <div
+                  key={reply.id}
+                  className="bg-muted/30 border-l-2 border-accent/60 px-5 py-5 rounded-sm"
+                >
+                  <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.25em] text-accent-foreground/70">
+                    Parent reply{reply.parent_name ? ` · ${reply.parent_name}` : ""}
+                  </p>
+                  <p className="text-sm font-light text-foreground leading-relaxed whitespace-pre-wrap">
+                    {reply.reply_text}
+                  </p>
+                  {reply.note_text && (
+                    <p className="mt-3 text-[11px] font-light italic text-muted-foreground line-clamp-2">
+                      Re: “{reply.note_text}”
+                    </p>
+                  )}
+                  <p className="mt-3 text-[10px] tracking-wide text-muted-foreground">
+                    {format(new Date(reply.created_at), "d MMM yyyy")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </AppLayout>
   );
