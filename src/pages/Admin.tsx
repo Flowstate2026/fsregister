@@ -24,6 +24,33 @@ const Admin = () => {
   const [seedRunning, setSeedRunning] = useState(false);
   const [seedResult, setSeedResult] = useState<string | null>(null);
 
+  // Delete school
+  const [deleteSchoolId, setDeleteSchoolId] = useState("");
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteSchool = async () => {
+    const target = schools.find((s) => s.id === deleteSchoolId);
+    if (!target) { toast.error("Select a school"); return; }
+    if (deleteConfirmName !== target.name) { toast.error("School name does not match"); return; }
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-school", {
+        body: { admin_password: adminPassword, school_id: deleteSchoolId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Deleted "${target.name}"`);
+      setSchools((prev) => prev.filter((s) => s.id !== deleteSchoolId));
+      setDeleteSchoolId("");
+      setDeleteConfirmName("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     if (authenticated) {
       supabase.functions
