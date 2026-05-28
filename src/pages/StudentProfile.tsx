@@ -331,7 +331,7 @@ const StudentProfile = () => {
                   key={reply.id}
                   className="bg-muted/30 border-l-2 border-accent/60 px-5 py-5 rounded-sm"
                 >
-                  <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.25em] text-accent-foreground/70">
+                  <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
                     Parent reply{reply.parent_name ? ` · ${reply.parent_name}` : ""}
                   </p>
                   <p className="text-sm font-light text-foreground leading-relaxed whitespace-pre-wrap">
