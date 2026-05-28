@@ -198,36 +198,43 @@ const StudentProfile = () => {
             Attendance History
           </h3>
           <div className="divide-y divide-border/40">
-            {studentData.attendance?.slice(0, 20).map((record) => (
-              <div
-                key={record.id}
-                className="flex items-center justify-between bg-card px-5 py-3.5 text-sm font-light"
-              >
-                <div>
-                  <span className="text-foreground">
-                    {format(parseISO(record.date), "d MMM yyyy")}
-                  </span>
-                  <span className="ml-3 text-[11px] text-muted-foreground">
-                    {record.class_id ? `Class ${record.class_id}` : "Unknown"}
+            {studentData.attendance?.slice(0, 20).map((record) => {
+              const className = studentData.enrollments?.find(
+                (e) => e.class_id === record.class_id
+              )?.classes?.name;
+              return (
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between bg-card px-5 py-3.5 text-sm font-light"
+                >
+                  <div>
+                    <span className="text-foreground">
+                      {format(parseISO(record.date), "d MMM yyyy")}
+                    </span>
+                    {className && (
+                      <span className="ml-3 text-[11px] text-muted-foreground">
+                        {className}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`flex items-center gap-1.5 text-[11px] ${
+                      record.present ? "text-foreground" : "text-risk"
+                    }`}
+                  >
+                    {record.present ? (
+                      <>
+                        <Check className="h-3 w-3" /> Present
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-3 w-3" /> Absent
+                      </>
+                    )}
                   </span>
                 </div>
-                <span
-                  className={`flex items-center gap-1.5 text-[11px] ${
-                    record.present ? "text-foreground" : "text-risk"
-                  }`}
-                >
-                  {record.present ? (
-                    <>
-                      <Check className="h-3 w-3" /> Present
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-3 w-3" /> Absent
-                    </>
-                  )}
-                </span>
-              </div>
-            ))}
+              );
+            })}
             {!studentData.attendance?.length && (
               <p className="text-[11px] font-light text-muted-foreground py-4">
                 No attendance records
