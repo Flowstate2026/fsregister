@@ -117,6 +117,83 @@ Deno.serve(async (req) => {
 
     if (moreErr) throw moreErr;
 
+    // ---- Also seed a dedicated "Test Student" with <70% attendance ----
+    // Find or create the Test Student in this school
+    let testStudentId: string;
+    const { data: existingTest } = await supabaseAdmin
+      .from("students")
+      .select("id")
+      .eq("school_id", school_id)
+      .eq("first_name", "Test")
+      .eq("last_name", "Student")
+      .limit(1);
+
+    if (existingTest?.length) {
+      testStudentId = existingTest[0].id;
+      // Ensure not archived
+      await supabaseAdmin
+        .from("students")
+        .update({ archived: false })
+        .eq("id", testStudentId);
+    } else {
+      const { data: created, error: createErr } = await supabaseAdmin
+        .from("students")
+        .insert({
+          school_id,
+          first_name: "Test",
+          last_name: "Student",
+          archived: false,
+        })
+        .select("id")
+        .single();
+      if (createErr) throw createErr;
+      testStudentId = created.id;
+    }
+
+    // Ensure Test Student is enrolled in the class
+    const { data: testEnrollment } = await supabaseAdmin
+      .from("class_enrollments")
+      .select("id")
+      .eq("student_id", testStudentId)
+      .eq("class_id", classId)
+      .limit(1);
+
+    if (!testEnrollment?.length) {
+      const { error: enrollErr } = await supabaseAdmin
+        .from("class_enrollments")
+        .insert({ student_id: testStudentId, class_id: classId });
+      if (enrollErr) throw enrollErr;
+    }
+
+    // Build 10 separate dates within the last 8 weeks (every ~5 days)
+    const testDates: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (i * 5 + 2)); // 2, 7, 12, ... 47 days ago — all within 8 weeks (56 days)
+      testDates.push(d.toISOString().split("T")[0]);
+    }
+
+    // Clear any existing records on those dates
+    await supabaseAdmin
+      .from("attendance_records")
+      .delete()
+      .eq("student_id", testStudentId)
+      .in("date", testDates);
+
+    // 7 absent, 3 present => 30% attendance
+    const testRecords = testDates.map((date, i) => ({
+      student_id: testStudentId,
+      class_id: classId,
+      date,
+      present: i >= 7,
+      authorised: false,
+    }));
+
+    const { error: testInsertErr } = await supabaseAdmin
+      .from("attendance_records")
+      .insert(testRecords);
+    if (testInsertErr) throw testInsertErr;
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -124,7 +201,16 @@ Deno.serve(async (req) => {
         student_id: student.id,
         absence_dates: [date1Str, date2Str],
         total_records_seeded: 2 + additionalDates.length,
-        message: `Seeded ${student.first_name} ${student.last_name} with 2 unauthorised absences (${date1Str}, ${date2Str}) and additional records to bring attendance below 70%.`,
+        test_student: {
+          id: testStudentId,
+          name: "Test Student",
+          records_seeded: testRecords.length,
+          present_count: 3,
+          absent_count: 7,
+          attendance_pct: 30,
+          dates: testDates,
+        },
+        message: `Seeded ${student.first_name} ${student.last_name} with 2 unauthorised absences and seeded Test Student with 10 attendance records (7 absent / 3 present) over the last 8 weeks.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
