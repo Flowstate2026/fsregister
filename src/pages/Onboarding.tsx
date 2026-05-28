@@ -218,12 +218,19 @@ export default function Onboarding() {
     if (csvStudents.length === 0) { setStep(5); return; }
     setLoading(true);
     try {
+      // Parse comma-separated class names per student
+      const studentClasses: string[][] = csvStudents.map((s) =>
+        (s.class_name || "")
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+      );
+
       // Collect unique class names and ensure they exist
-      const classNames = [...new Set(csvStudents.map((s) => s.class_name).filter(Boolean))] as string[];
+      const classNames = [...new Set(studentClasses.flat())];
       const classMap: Record<string, string> = {};
 
       if (classNames.length > 0) {
-        // Fetch existing classes for this school
         const { data: existing } = await supabase
           .from("classes")
           .select("id, name")
@@ -235,16 +242,15 @@ export default function Onboarding() {
         for (const cn of classNames) {
           const key = cn.toLowerCase();
           if (existingMap[key]) {
-            classMap[cn] = existingMap[key];
+            classMap[key] = existingMap[key];
           } else {
-            // Create the class (default Monday 10:00)
             const { data: newClass, error } = await supabase
               .from("classes")
               .insert({ school_id: schoolId, name: cn, day_of_week: 1, time_of_day: "10:00" })
               .select("id")
               .single();
             if (error) throw error;
-            classMap[cn] = newClass.id;
+            classMap[key] = newClass.id;
             existingMap[key] = newClass.id;
           }
         }
@@ -262,19 +268,24 @@ export default function Onboarding() {
       const { data: inserted, error } = await supabase.from("students").insert(rows).select("id, first_name, last_name");
       if (error) throw error;
 
-      // Create class enrollments
+      // Create class enrollments (one per student/class pair)
       if (inserted) {
         const enrollments: { student_id: string; class_id: string }[] = [];
-        csvStudents.forEach((s, i) => {
-          if (s.class_name && classMap[s.class_name] && inserted[i]) {
-            enrollments.push({ student_id: inserted[i].id, class_id: classMap[s.class_name] });
-          }
+        studentClasses.forEach((classes, i) => {
+          if (!inserted[i]) return;
+          classes.forEach((cn) => {
+            const classId = classMap[cn.toLowerCase()];
+            if (classId) {
+              enrollments.push({ student_id: inserted[i].id, class_id: classId });
+            }
+          });
         });
         if (enrollments.length > 0) {
           const { error: enrollErr } = await supabase.from("class_enrollments").insert(enrollments);
           if (enrollErr) console.error("Enrollment error:", enrollErr);
         }
       }
+
 
       toast.success(`${csvStudents.length} students added`);
       setStep(5);
