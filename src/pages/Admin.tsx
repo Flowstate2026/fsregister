@@ -118,11 +118,32 @@ const Admin = () => {
     width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, fontSize: 13,
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // Verify the entered password against the stored ADMIN_SETUP_PASSWORD
+      // by calling an admin endpoint that checks it. Does NOT modify the secret.
+      const { data, error } = await supabase.functions.invoke("admin-list-schools", {
+        body: { admin_password: adminPassword },
+      });
+      if (error || (data as any)?.error) {
+        toast.error("Incorrect admin password");
+        return;
+      }
+      setAuthenticated(true);
+    } catch {
+      toast.error("Could not verify password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!authenticated) {
     return (
       <div style={{ maxWidth: 400, margin: "80px auto", padding: 24, fontFamily: "system-ui" }}>
         <h1 style={{ fontSize: 20, marginBottom: 24 }}>Admin Access</h1>
-        <form onSubmit={(e) => { e.preventDefault(); setAuthenticated(true); }}>
+        <form onSubmit={handleLogin}>
           <label style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Admin Password</label>
           <input
             type="password"
@@ -131,8 +152,8 @@ const Admin = () => {
             required
             style={{ ...inputStyle, marginBottom: 16 }}
           />
-          <button type="submit" style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer" }}>
-            Enter
+          <button type="submit" disabled={loading} style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
+            {loading ? "Checking…" : "Enter"}
           </button>
         </form>
       </div>
@@ -222,6 +243,18 @@ const Admin = () => {
             {seedResult}
           </pre>
         )}
+      </section>
+
+      {/* Update Admin Password */}
+      <section style={{ marginTop: 48, padding: 16, border: "1px solid #e5e5e5", borderRadius: 4, background: "#fafafa" }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Update Admin Password</h2>
+        <p style={{ fontSize: 12, color: "#666", marginBottom: 12, lineHeight: 1.5 }}>
+          The admin password is stored as the <code>ADMIN_SETUP_PASSWORD</code> secret. For security, it can only be changed from
+          Project Settings → Secrets. The login field above only <em>checks</em> the password — it never writes to the secret.
+        </p>
+        <p style={{ fontSize: 12, color: "#666", margin: 0 }}>
+          To rotate: open Lovable Cloud settings, find <code>ADMIN_SETUP_PASSWORD</code>, and update its value there.
+        </p>
       </section>
     </div>
   );
