@@ -24,6 +24,33 @@ const Admin = () => {
   const [seedRunning, setSeedRunning] = useState(false);
   const [seedResult, setSeedResult] = useState<string | null>(null);
 
+  // Delete school
+  const [deleteSchoolId, setDeleteSchoolId] = useState("");
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteSchool = async () => {
+    const target = schools.find((s) => s.id === deleteSchoolId);
+    if (!target) { toast.error("Select a school"); return; }
+    if (deleteConfirmName !== target.name) { toast.error("School name does not match"); return; }
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-school", {
+        body: { admin_password: adminPassword, school_id: deleteSchoolId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Deleted "${target.name}"`);
+      setSchools((prev) => prev.filter((s) => s.id !== deleteSchoolId));
+      setDeleteSchoolId("");
+      setDeleteConfirmName("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     if (authenticated) {
       supabase.functions
@@ -244,6 +271,67 @@ const Admin = () => {
           </pre>
         )}
       </section>
+
+      {/* Delete School */}
+      <section style={{ marginTop: 48, padding: 16, border: "1px solid #f0c4c4", borderRadius: 4, background: "#fdf5f5" }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8, color: "#a33" }}>Delete School</h2>
+        <p style={{ fontSize: 12, color: "#666", marginBottom: 16, lineHeight: 1.5 }}>
+          Permanently deletes all data for a school (students, attendance, notes, enrollments, webhooks, invites, roles, profiles). Auth user accounts are <strong>not</strong> deleted.
+        </p>
+
+        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>School</label>
+        <select
+          value={deleteSchoolId}
+          onChange={(e) => { setDeleteSchoolId(e.target.value); setDeleteConfirmName(""); }}
+          style={{ ...inputStyle, marginBottom: 12 }}
+        >
+          <option value="">Select a school…</option>
+          {schools.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+
+        {deleteSchoolId && (
+          <>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
+              Type <strong>{schools.find((s) => s.id === deleteSchoolId)?.name}</strong> to confirm
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              placeholder="Exact school name"
+              style={{ ...inputStyle, marginBottom: 16 }}
+            />
+          </>
+        )}
+
+        <button
+          onClick={handleDeleteSchool}
+          disabled={
+            deleting ||
+            !deleteSchoolId ||
+            deleteConfirmName !== (schools.find((s) => s.id === deleteSchoolId)?.name ?? "__never__")
+          }
+          style={{
+            padding: "8px 24px",
+            background: "#a33",
+            color: "#fff",
+            border: "none",
+            borderRadius: 2,
+            cursor: deleting ? "wait" : "pointer",
+            opacity:
+              deleting ||
+              !deleteSchoolId ||
+              deleteConfirmName !== (schools.find((s) => s.id === deleteSchoolId)?.name ?? "__never__")
+                ? 0.5
+                : 1,
+          }}
+        >
+          {deleting ? "Deleting…" : "Delete School"}
+        </button>
+      </section>
+
 
       {/* Update Admin Password */}
       <section style={{ marginTop: 48, padding: 16, border: "1px solid #e5e5e5", borderRadius: 4, background: "#fafafa" }}>
