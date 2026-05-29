@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
           full_name: admin_email,
           school_id: school.id,
           role: "owner",
+          password_set: true,
         },
       });
 
