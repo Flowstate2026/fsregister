@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
             full_name: full_name.trim(),
             school_id: schoolId,
             role: "teacher",
+            password_set: false,
           },
           redirectTo: `${req.headers.get("origin") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/reset-password`,
         }
