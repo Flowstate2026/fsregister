@@ -52,7 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchProfile = async (currentUser: User) => {
-    await ensureProfileExists(currentUser);
+    try {
+      await ensureProfileExists(currentUser);
+    } catch (e) {
+      // Don't block role loading if profile bootstrap fails (e.g. stale school_id in metadata)
+      console.error("ensureProfileExists failed:", e);
+    }
 
     const { data: profileData } = await supabase
       .from("profiles")
