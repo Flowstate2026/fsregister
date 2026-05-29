@@ -35,6 +35,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
+  if (user.user_metadata?.password_set === false) {
+    return <Navigate to="/reset-password" replace />;
+  }
   return <>{children}</>;
 }
 

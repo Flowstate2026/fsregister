@@ -156,10 +156,15 @@ const ResetPassword = () => {
         return;
       }
 
-      const { error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+        data: { password_set: true },
+      });
       if (updateError) {
         setError(updateError.message);
       } else {
+        // Sign out so the user has to log in with their new password
+        await supabase.auth.signOut();
         setSuccess(true);
         setTimeout(() => navigate("/login"), 2000);
       }
