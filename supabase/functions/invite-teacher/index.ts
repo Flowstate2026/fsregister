@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
             role: "teacher",
             password_set: false,
           },
-          redirectTo: `${req.headers.get("origin") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/reset-password`,
+          redirectTo: `https://fsregister.lovable.app/reset-password`,
         }
       );
 
