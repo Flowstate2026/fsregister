@@ -18,6 +18,7 @@ import {
   isAtRisk,
 } from "@/lib/student-utils";
 import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
+import { parseCsvDate } from "@/lib/csv-date";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -158,7 +159,7 @@ const OwnerStudents = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,2015-03-12,2025-01-10,Junior Ballet,parent@example.com\n";
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -183,8 +184,8 @@ const OwnerStudents = () => {
         return {
           first_name: row["first_name"] || "",
           last_name: row["last_name"] || "",
-          date_of_birth: row["date_of_birth"] || undefined,
-          join_date: row["join_date"] || undefined,
+          date_of_birth: parseCsvDate(row["date_of_birth"]),
+          join_date: parseCsvDate(row["join_date"]),
           class_name: row["class_name"] || undefined,
           parent_email: row["parent_email"] || undefined,
         };
@@ -335,7 +336,7 @@ const OwnerStudents = () => {
             <div className="space-y-4">
               <p className="text-sm font-light text-muted-foreground">
                 Columns: first_name, last_name, date_of_birth, join_date, class_name, parent_email.
-                Classes will be created if they don't exist. Use commas to enrol in multiple classes.
+                Dates use DD/MM/YYYY. Classes will be created if they don't exist. Use commas to enrol in multiple classes.
               </p>
               <button
                 type="button"

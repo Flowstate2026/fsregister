@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
+import { parseCsvDate } from "@/lib/csv-date";
 
 const STEPS = [
   { label: "GDPR", icon: ShieldCheck },
@@ -177,7 +178,7 @@ export default function Onboarding() {
   };
 
   const downloadTemplate = useCallback(() => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,2015-03-12,2025-01-10,Junior Ballet,parent@example.com\n";
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -202,8 +203,8 @@ export default function Onboarding() {
         return {
           first_name: row["first_name"] || "",
           last_name: row["last_name"] || "",
-          date_of_birth: row["date_of_birth"] || undefined,
-          join_date: row["join_date"] || undefined,
+          date_of_birth: parseCsvDate(row["date_of_birth"]),
+          join_date: parseCsvDate(row["join_date"]),
           class_name: row["class_name"] || undefined,
           parent_email: row["parent_email"] || undefined,
         };
@@ -593,7 +594,7 @@ export default function Onboarding() {
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1">Required columns</p>
                     <p className="text-xs text-foreground/70 font-light">first_name, last_name</p>
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1 mt-3">Optional columns</p>
-                    <p className="text-xs text-foreground/70 font-light">date_of_birth, join_date, class_name, parent_email</p>
+                    <p className="text-xs text-foreground/70 font-light">date_of_birth, join_date, class_name, parent_email (dates as DD/MM/YYYY)</p>
                   </div>
 
                   <label className="block cursor-pointer">
