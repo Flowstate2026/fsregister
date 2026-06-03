@@ -173,7 +173,7 @@ export default function ClassesSection({ schoolId }: Props) {
                     </div>
                   ) : (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {dayLabel(cls.day_of_week)} at {cls.time_of_day}
+                      {dayLabel(cls.day_of_week)} at {formatTime(cls.time_of_day)}
                     </p>
                   )}
                 </div>
