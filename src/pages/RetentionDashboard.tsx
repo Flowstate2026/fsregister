@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAllStudentsWithDetails } from "@/hooks/useStudentWithDetails";
+import { useRecentNotes } from "@/hooks/useRecentNotes";
 import AppLayout from "@/components/AppLayout";
 import {
   isNewStudent,
@@ -7,11 +8,14 @@ import {
   calculateAttendancePercentage,
   isAtRisk,
 } from "@/lib/student-utils";
-import { Star, AlertTriangle, PenLine } from "lucide-react";
+import { Star, AlertTriangle, PenLine, StickyNote } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
 
 const RetentionDashboard = () => {
   const navigate = useNavigate();
   const { data: students = [], isLoading } = useAllStudentsWithDetails();
+  const { data: recentNotes = [], isLoading: notesLoading } = useRecentNotes(10);
 
   // Enrich student data with computed metrics
   const enrichedStudents = students.map((s) => {
@@ -96,6 +100,44 @@ const RetentionDashboard = () => {
                 )}
               </section>
             ))}
+
+            {/* Recent Notes */}
+            <section>
+              <div className="mb-5 flex items-center gap-3">
+                <StickyNote className="h-4 w-4 text-gold" />
+                <h3 className="font-display text-lg text-foreground">Recent Notes</h3>
+                <span className="bg-accent/10 text-accent px-2 py-0.5 text-[10px] font-light uppercase tracking-[0.15em]">{recentNotes.length}</span>
+              </div>
+
+              {notesLoading ? (
+                <div className="h-32 animate-pulse bg-muted/40" />
+              ) : recentNotes.length === 0 ? (
+                <p className="bg-card px-6 py-6 text-[11px] font-light text-muted-foreground shadow-[var(--shadow-card)]">No notes yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentNotes.map((note) => (
+                    <button
+                      key={note.id}
+                      onClick={() => navigate(`/student/${note.studentId}`)}
+                      className="w-full bg-card px-6 py-5 text-left shadow-[var(--shadow-card)] transition-all hover:bg-secondary/30 active:scale-[0.995]"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-light text-foreground truncate">{note.noteText}</p>
+                          <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+                            <span>{note.studentName}</span>
+                            <span className="text-border">•</span>
+                            <span>{note.authorName}</span>
+                            <span className="text-border">•</span>
+                            <span>{formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
       </div>
