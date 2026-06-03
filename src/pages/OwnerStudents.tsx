@@ -30,6 +30,16 @@ const OwnerStudents = () => {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvStudents, setCsvStudents] = useState<Array<{
+    first_name: string;
+    last_name: string;
+    date_of_birth?: string;
+    join_date?: string;
+    class_name?: string;
+    parent_email?: string;
+  }>>([]);
 
   // Form state
   const [firstName, setFirstName] = useState("");
