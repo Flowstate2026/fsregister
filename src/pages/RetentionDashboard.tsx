@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 const RetentionDashboard = () => {
   const navigate = useNavigate();
   const { data: students = [], isLoading } = useAllStudentsWithDetails();
+  const { data: recentNotes = [], isLoading: notesLoading } = useRecentNotes(10);
 
   // Enrich student data with computed metrics
   const enrichedStudents = students.map((s) => {
