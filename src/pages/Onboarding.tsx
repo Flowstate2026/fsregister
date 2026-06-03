@@ -594,7 +594,7 @@ export default function Onboarding() {
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1">Required columns</p>
                     <p className="text-xs text-foreground/70 font-light">first_name, last_name</p>
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-medium mb-1 mt-3">Optional columns</p>
-                    <p className="text-xs text-foreground/70 font-light">date_of_birth, join_date, class_name, parent_email</p>
+                    <p className="text-xs text-foreground/70 font-light">date_of_birth, join_date, class_name, parent_email (dates as DD/MM/YYYY)</p>
                   </div>
 
                   <label className="block cursor-pointer">
