@@ -184,8 +184,8 @@ const OwnerStudents = () => {
         return {
           first_name: row["first_name"] || "",
           last_name: row["last_name"] || "",
-          date_of_birth: row["date_of_birth"] || undefined,
-          join_date: row["join_date"] || undefined,
+          date_of_birth: parseCsvDate(row["date_of_birth"]),
+          join_date: parseCsvDate(row["join_date"]),
           class_name: row["class_name"] || undefined,
           parent_email: row["parent_email"] || undefined,
         };
