@@ -37,6 +37,7 @@ export function useRecentNotes(limit = 10) {
         id: n.id,
         noteText: n.note_text,
         createdAt: n.created_at,
+        studentId: n.student_id,
         studentName: `${(n.students as any)?.first_name ?? ""} ${(n.students as any)?.last_name ?? ""}`.trim(),
         authorName: nameMap.get(n.author_id) || "Unknown",
       })) as RecentNote[];
