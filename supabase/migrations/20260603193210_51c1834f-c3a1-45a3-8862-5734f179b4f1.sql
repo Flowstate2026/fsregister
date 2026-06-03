@@ -1,0 +1,1 @@
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS bulk_imported boolean NOT NULL DEFAULT false;

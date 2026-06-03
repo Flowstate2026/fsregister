@@ -19,6 +19,7 @@ import {
 } from "@/lib/student-utils";
 import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
 import { parseCsvDate } from "@/lib/csv-date";
+import { parseCsvLine } from "@/lib/csv-parse";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -159,7 +160,7 @@ const OwnerStudents = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\n";
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\nLily,Jones,28/09/2012,10/01/2025,\"Jazz Technique, Acro 3, Performance Team\",parent2@example.com\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -176,9 +177,9 @@ const OwnerStudents = () => {
       const text = ev.target?.result as string;
       const lines = text.split("\n").filter((l) => l.trim());
       if (lines.length < 2) { setCsvStudents([]); return; }
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
       const students = lines.slice(1).map((line) => {
-        const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+        const parts = parseCsvLine(line);
         const row: Record<string, string> = {};
         headers.forEach((h, i) => { row[h] = parts[i] || ""; });
         return {
@@ -231,6 +232,7 @@ const OwnerStudents = () => {
         school_id: schoolId,
         first_name: s.first_name,
         last_name: s.last_name,
+        bulk_imported: true,
         ...(s.date_of_birth ? { date_of_birth: s.date_of_birth } : {}),
         ...(s.join_date ? { join_date: s.join_date } : {}),
         ...(s.parent_email ? { parent_email: s.parent_email } : {}),
@@ -336,7 +338,7 @@ const OwnerStudents = () => {
             <div className="space-y-4">
               <p className="text-sm font-light text-muted-foreground">
                 Columns: first_name, last_name, date_of_birth, join_date, class_name, parent_email.
-                Dates use DD/MM/YYYY. Classes will be created if they don't exist. Use commas to enrol in multiple classes.
+                Dates use DD/MM/YYYY. Classes will be created if they don't exist. To enrol in multiple classes, wrap them in quotes and separate with commas, e.g. "Jazz, Acro 3, Performance Team".
               </p>
               <button
                 type="button"

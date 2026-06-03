@@ -395,6 +395,7 @@ export type Database = {
       students: {
         Row: {
           archived: boolean
+          bulk_imported: boolean
           created_at: string
           date_of_birth: string | null
           first_name: string
@@ -409,6 +410,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          bulk_imported?: boolean
           created_at?: string
           date_of_birth?: string | null
           first_name: string
@@ -423,6 +425,7 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          bulk_imported?: boolean
           created_at?: string
           date_of_birth?: string | null
           first_name?: string

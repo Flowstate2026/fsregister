@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
 import { parseCsvDate } from "@/lib/csv-date";
+import { parseCsvLine } from "@/lib/csv-parse";
 
 const STEPS = [
   { label: "GDPR", icon: ShieldCheck },
@@ -178,7 +179,7 @@ export default function Onboarding() {
   };
 
   const downloadTemplate = useCallback(() => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\n";
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\nLily,Jones,28/09/2012,10/01/2025,\"Jazz Technique, Acro 3, Performance Team\",parent2@example.com\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -195,9 +196,9 @@ export default function Onboarding() {
       const text = ev.target?.result as string;
       const lines = text.split("\n").filter((l) => l.trim());
       if (lines.length < 2) { setCsvStudents([]); return; }
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
       const students = lines.slice(1).map((line) => {
-        const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+        const parts = parseCsvLine(line);
         const row: Record<string, string> = {};
         headers.forEach((h, i) => { row[h] = parts[i] || ""; });
         return {
@@ -262,6 +263,7 @@ export default function Onboarding() {
         school_id: schoolId,
         first_name: s.first_name,
         last_name: s.last_name,
+        bulk_imported: true,
         ...(s.date_of_birth ? { date_of_birth: s.date_of_birth } : {}),
         ...(s.join_date ? { join_date: s.join_date } : {}),
         ...(s.parent_email ? { parent_email: s.parent_email } : {}),
