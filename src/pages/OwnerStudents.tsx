@@ -18,6 +18,7 @@ import {
   isAtRisk,
 } from "@/lib/student-utils";
 import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
+import { parseCsvDate } from "@/lib/csv-date";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
