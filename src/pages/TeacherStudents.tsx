@@ -22,11 +22,10 @@ const TeacherStudents = () => {
   const { data: students, isLoading } = useQuery({
     queryKey: ["teacher-students", user?.id],
     queryFn: async () => {
-      // Get classes assigned to this teacher
+      // Teachers see all classes in their school (RLS scopes by school_id)
       const { data: classes } = await supabase
         .from("classes")
-        .select("id")
-        .eq("teacher_id", user!.id);
+        .select("id");
       if (!classes?.length) return [];
 
       const classIds = classes.map((c) => c.id);

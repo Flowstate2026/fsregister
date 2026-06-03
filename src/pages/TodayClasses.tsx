@@ -22,9 +22,7 @@ const TodayClasses = () => {
         .order("time_of_day")
         .eq("day_of_week", today);
 
-      if (!isOwner && user) {
-        query = query.eq("teacher_id", user.id);
-      }
+      // Teachers see all classes in their school (RLS scopes by school_id)
 
       const { data, error } = await query;
       if (error) throw error;
