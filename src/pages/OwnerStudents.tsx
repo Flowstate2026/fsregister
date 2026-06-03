@@ -151,6 +151,119 @@ const OwnerStudents = () => {
     setSelectedClassIds([]);
   };
 
+  const resetImport = () => {
+    setShowImport(false);
+    setCsvFile(null);
+    setCsvStudents([]);
+  };
+
+  const downloadTemplate = () => {
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,2015-03-12,2025-01-10,Junior Ballet,parent@example.com\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "student_import_template.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length < 2) { setCsvStudents([]); return; }
+      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const students = lines.slice(1).map((line) => {
+        const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => { row[h] = parts[i] || ""; });
+        return {
+          first_name: row["first_name"] || "",
+          last_name: row["last_name"] || "",
+          date_of_birth: row["date_of_birth"] || undefined,
+          join_date: row["join_date"] || undefined,
+          class_name: row["class_name"] || undefined,
+          parent_email: row["parent_email"] || undefined,
+        };
+      }).filter((s) => s.first_name);
+      setCsvStudents(students);
+    };
+    reader.readAsText(file);
+  };
+
+  const importCsvMutation = useMutation({
+    mutationFn: async () => {
+      if (!schoolId) throw new Error("No school");
+      if (csvStudents.length === 0) throw new Error("No students to import");
+
+      const studentClasses: string[][] = csvStudents.map((s) =>
+        (s.class_name || "").split(",").map((c) => c.trim()).filter(Boolean)
+      );
+      const classNames = [...new Set(studentClasses.flat())];
+      const classMap: Record<string, string> = {};
+
+      if (classNames.length > 0) {
+        const { data: existing } = await supabase
+          .from("classes").select("id, name").eq("school_id", schoolId);
+        const existingMap: Record<string, string> = {};
+        (existing || []).forEach((c) => { existingMap[c.name.toLowerCase()] = c.id; });
+        for (const cn of classNames) {
+          const key = cn.toLowerCase();
+          if (existingMap[key]) {
+            classMap[key] = existingMap[key];
+          } else {
+            const { data: newClass, error } = await supabase
+              .from("classes")
+              .insert({ school_id: schoolId, name: cn, day_of_week: 1, time_of_day: "10:00" })
+              .select("id").single();
+            if (error) throw error;
+            classMap[key] = newClass.id;
+            existingMap[key] = newClass.id;
+          }
+        }
+      }
+
+      const rows = csvStudents.map((s) => ({
+        school_id: schoolId,
+        first_name: s.first_name,
+        last_name: s.last_name,
+        ...(s.date_of_birth ? { date_of_birth: s.date_of_birth } : {}),
+        ...(s.join_date ? { join_date: s.join_date } : {}),
+        ...(s.parent_email ? { parent_email: s.parent_email } : {}),
+      }));
+      const { data: inserted, error } = await supabase
+        .from("students").insert(rows).select("id");
+      if (error) throw error;
+
+      if (inserted) {
+        const enrollments: { student_id: string; class_id: string }[] = [];
+        studentClasses.forEach((classes, i) => {
+          if (!inserted[i]) return;
+          classes.forEach((cn) => {
+            const classId = classMap[cn.toLowerCase()];
+            if (classId) enrollments.push({ student_id: inserted[i].id, class_id: classId });
+          });
+        });
+        if (enrollments.length > 0) {
+          const { error: enrollErr } = await supabase.from("class_enrollments").insert(enrollments);
+          if (enrollErr) console.error("Enrollment error:", enrollErr);
+        }
+      }
+
+      return csvStudents.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} students imported`);
+      resetImport();
+      queryClient.invalidateQueries({ queryKey: ["owner-students"] });
+      queryClient.invalidateQueries({ queryKey: ["school-classes"] });
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
   const toggleClass = (classId: string) => {
     setSelectedClassIds((prev) =>
       prev.includes(classId)
