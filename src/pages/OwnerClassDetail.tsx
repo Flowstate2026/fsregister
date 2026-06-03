@@ -3,6 +3,7 @@ import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
+import StudentIndicators from "@/components/StudentIndicators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getDayName, formatTime } from "@/lib/student-utils";
+import { getDayName, formatTime, calculateAttendancePercentage } from "@/lib/student-utils";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, CalendarDays, Pencil, Save, X, User } from "lucide-react";
 
