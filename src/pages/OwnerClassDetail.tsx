@@ -39,6 +39,10 @@ interface EnrolledStudent {
   id: string;
   first_name: string;
   last_name: string;
+  join_date: string;
+  bulk_imported: boolean;
+  attendance: any[];
+  notes: any[];
 }
 
 const OwnerClassDetail = () => {
