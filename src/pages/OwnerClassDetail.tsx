@@ -204,18 +204,27 @@ const OwnerClassDetail = () => {
                 <p className="text-sm text-muted-foreground">No students enrolled</p>
               ) : (
                 <div className="divide-y divide-border/40">
-                  {students.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => navigate(`/student/${s.id}`)}
-                      className="flex w-full items-center gap-3 bg-card px-6 py-4 text-left transition-all hover:bg-secondary/30"
-                    >
-                      <User className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <span className="text-sm text-foreground">
-                        {s.first_name} {s.last_name}
-                      </span>
-                    </button>
-                  ))}
+                  {students.map((s) => {
+                    const percent = calculateAttendancePercentage(s.attendance);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => navigate(`/student/${s.id}`)}
+                        className="flex w-full items-center justify-between bg-card px-6 py-4 text-left transition-all hover:bg-secondary/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <User className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span className="text-sm text-foreground">
+                            {s.first_name} {s.last_name}
+                          </span>
+                        </div>
+                        <StudentIndicators
+                          student={s as any}
+                          attendancePercent={percent}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
