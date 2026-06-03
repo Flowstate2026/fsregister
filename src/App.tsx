@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ParentNote from "./pages/ParentNote";
+import OwnerClasses from "./pages/OwnerClasses";
+import OwnerClassDetail from "./pages/OwnerClassDetail";
 
 const queryClient = new QueryClient();
 
