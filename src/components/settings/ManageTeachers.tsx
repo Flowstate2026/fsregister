@@ -66,8 +66,12 @@ export default function ManageTeachers({ schoolId }: Props) {
     }
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("No active session. Please sign in again.");
       const { data, error } = await supabase.functions.invoke("invite-teacher", {
         body: { email: teacherEmail.trim(), full_name: teacherName.trim() },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -85,8 +89,12 @@ export default function ManageTeachers({ schoolId }: Props) {
   const handleDeleteTeacher = async (teacher: Teacher) => {
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("No active session. Please sign in again.");
       const { data, error } = await supabase.functions.invoke("delete-teacher", {
         body: { profile_id: teacher.id },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
