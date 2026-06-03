@@ -1,0 +1,1 @@
+CREATE POLICY "Owners can update school classes" ON public.classes FOR UPDATE TO authenticated USING (school_id = get_user_school_id(auth.uid()) AND has_role(auth.uid(), 'owner'::app_role)) WITH CHECK (school_id = get_user_school_id(auth.uid()) AND has_role(auth.uid(), 'owner'::app_role));

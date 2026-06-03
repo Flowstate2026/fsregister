@@ -60,10 +60,12 @@ export default function ClassesSection({ schoolId }: Props) {
     fetchClasses();
   }, [schoolId]);
 
+  const formatTime = (t: string) => (t ? t.slice(0, 5) : "");
+
   const handleEdit = (cls: ClassItem) => {
     setEditingId(cls.id);
     setEditDay(cls.day_of_week);
-    setEditTime(cls.time_of_day);
+    setEditTime(formatTime(cls.time_of_day));
   };
 
   const handleCancel = () => {
@@ -143,12 +145,13 @@ export default function ClassesSection({ schoolId }: Props) {
                         </SelectContent>
                       </Select>
                       <div className="relative">
-                        <Clock className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Clock className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <Input
+                          type="time"
+                          step={60}
                           value={editTime}
                           onChange={(e) => setEditTime(e.target.value)}
-                          placeholder="e.g. 16:30"
-                          className="h-9 w-28 pl-7 text-xs"
+                          className="h-9 w-32 pl-7 text-xs"
                         />
                       </div>
                       <Button
@@ -170,7 +173,7 @@ export default function ClassesSection({ schoolId }: Props) {
                     </div>
                   ) : (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {dayLabel(cls.day_of_week)} at {cls.time_of_day}
+                      {dayLabel(cls.day_of_week)} at {formatTime(cls.time_of_day)}
                     </p>
                   )}
                 </div>
