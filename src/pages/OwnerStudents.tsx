@@ -17,7 +17,7 @@ import {
   calculateAttendancePercentage,
   isAtRisk,
 } from "@/lib/student-utils";
-import { Search, Plus, X, CalendarIcon, Archive } from "lucide-react";
+import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,6 +30,16 @@ const OwnerStudents = () => {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvStudents, setCsvStudents] = useState<Array<{
+    first_name: string;
+    last_name: string;
+    date_of_birth?: string;
+    join_date?: string;
+    class_name?: string;
+    parent_email?: string;
+  }>>([]);
 
   // Form state
   const [firstName, setFirstName] = useState("");
@@ -141,6 +151,119 @@ const OwnerStudents = () => {
     setSelectedClassIds([]);
   };
 
+  const resetImport = () => {
+    setShowImport(false);
+    setCsvFile(null);
+    setCsvStudents([]);
+  };
+
+  const downloadTemplate = () => {
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,2015-03-12,2025-01-10,Junior Ballet,parent@example.com\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "student_import_template.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length < 2) { setCsvStudents([]); return; }
+      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const students = lines.slice(1).map((line) => {
+        const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+        const row: Record<string, string> = {};
+        headers.forEach((h, i) => { row[h] = parts[i] || ""; });
+        return {
+          first_name: row["first_name"] || "",
+          last_name: row["last_name"] || "",
+          date_of_birth: row["date_of_birth"] || undefined,
+          join_date: row["join_date"] || undefined,
+          class_name: row["class_name"] || undefined,
+          parent_email: row["parent_email"] || undefined,
+        };
+      }).filter((s) => s.first_name);
+      setCsvStudents(students);
+    };
+    reader.readAsText(file);
+  };
+
+  const importCsvMutation = useMutation({
+    mutationFn: async () => {
+      if (!schoolId) throw new Error("No school");
+      if (csvStudents.length === 0) throw new Error("No students to import");
+
+      const studentClasses: string[][] = csvStudents.map((s) =>
+        (s.class_name || "").split(",").map((c) => c.trim()).filter(Boolean)
+      );
+      const classNames = [...new Set(studentClasses.flat())];
+      const classMap: Record<string, string> = {};
+
+      if (classNames.length > 0) {
+        const { data: existing } = await supabase
+          .from("classes").select("id, name").eq("school_id", schoolId);
+        const existingMap: Record<string, string> = {};
+        (existing || []).forEach((c) => { existingMap[c.name.toLowerCase()] = c.id; });
+        for (const cn of classNames) {
+          const key = cn.toLowerCase();
+          if (existingMap[key]) {
+            classMap[key] = existingMap[key];
+          } else {
+            const { data: newClass, error } = await supabase
+              .from("classes")
+              .insert({ school_id: schoolId, name: cn, day_of_week: 1, time_of_day: "10:00" })
+              .select("id").single();
+            if (error) throw error;
+            classMap[key] = newClass.id;
+            existingMap[key] = newClass.id;
+          }
+        }
+      }
+
+      const rows = csvStudents.map((s) => ({
+        school_id: schoolId,
+        first_name: s.first_name,
+        last_name: s.last_name,
+        ...(s.date_of_birth ? { date_of_birth: s.date_of_birth } : {}),
+        ...(s.join_date ? { join_date: s.join_date } : {}),
+        ...(s.parent_email ? { parent_email: s.parent_email } : {}),
+      }));
+      const { data: inserted, error } = await supabase
+        .from("students").insert(rows).select("id");
+      if (error) throw error;
+
+      if (inserted) {
+        const enrollments: { student_id: string; class_id: string }[] = [];
+        studentClasses.forEach((classes, i) => {
+          if (!inserted[i]) return;
+          classes.forEach((cn) => {
+            const classId = classMap[cn.toLowerCase()];
+            if (classId) enrollments.push({ student_id: inserted[i].id, class_id: classId });
+          });
+        });
+        if (enrollments.length > 0) {
+          const { error: enrollErr } = await supabase.from("class_enrollments").insert(enrollments);
+          if (enrollErr) console.error("Enrollment error:", enrollErr);
+        }
+      }
+
+      return csvStudents.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} students imported`);
+      resetImport();
+      queryClient.invalidateQueries({ queryKey: ["owner-students"] });
+      queryClient.invalidateQueries({ queryKey: ["school-classes"] });
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
   const toggleClass = (classId: string) => {
     setSelectedClassIds((prev) =>
       prev.includes(classId)
@@ -176,17 +299,76 @@ const OwnerStudents = () => {
               {showArchived ? "Active" : "Archived"}
             </Button>
             {!showArchived && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowForm(true)}
-                className="text-[10px] uppercase tracking-[0.15em]"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowImport(true)}
+                  className="text-[10px] uppercase tracking-[0.15em]"
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1" /> Import CSV
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(true)}
+                  className="text-[10px] uppercase tracking-[0.15em]"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Import CSV Panel */}
+        {showImport && (
+          <div className="mb-8 bg-card p-6 shadow-[var(--shadow-card)]">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-[10px] font-medium uppercase tracking-[0.35em] text-muted-foreground">
+                Import Students from CSV
+              </h3>
+              <button onClick={resetImport}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm font-light text-muted-foreground">
+                Columns: first_name, last_name, date_of_birth, join_date, class_name, parent_email.
+                Classes will be created if they don't exist. Use commas to enrol in multiple classes.
+              </p>
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-accent hover:underline"
+              >
+                <Download className="h-3 w-3" /> Download template
+              </button>
+              <label className="block">
+                <div className="flex items-center justify-center border border-dashed border-foreground/20 px-4 py-6 cursor-pointer hover:border-accent transition-colors">
+                  <span className="text-sm font-light text-muted-foreground">
+                    {csvFile ? csvFile.name : "Choose CSV file"}
+                  </span>
+                </div>
+                <input type="file" accept=".csv" className="hidden" onChange={handleCsvSelect} />
+              </label>
+              {csvStudents.length > 0 && (
+                <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+                  {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
+                  {csvStudents.some(s => s.class_name) &&
+                    ` · ${[...new Set(csvStudents.map(s => s.class_name).filter(Boolean))].length} class(es)`}
+                </p>
+              )}
+              <Button
+                onClick={() => importCsvMutation.mutate()}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending}
+                className="w-full"
+              >
+                {importCsvMutation.isPending ? "Importing…" : csvStudents.length > 0 ? `Import ${csvStudents.length} Students` : "Import"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Add Student Form */}
         {showForm && (
