@@ -5,6 +5,7 @@ export interface RecentNote {
   id: string;
   noteText: string;
   createdAt: string;
+  studentId: string;
   studentName: string;
   authorName: string;
 }
