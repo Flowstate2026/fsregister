@@ -299,17 +299,76 @@ const OwnerStudents = () => {
               {showArchived ? "Active" : "Archived"}
             </Button>
             {!showArchived && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowForm(true)}
-                className="text-[10px] uppercase tracking-[0.15em]"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowImport(true)}
+                  className="text-[10px] uppercase tracking-[0.15em]"
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1" /> Import CSV
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(true)}
+                  className="text-[10px] uppercase tracking-[0.15em]"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Import CSV Panel */}
+        {showImport && (
+          <div className="mb-8 bg-card p-6 shadow-[var(--shadow-card)]">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-[10px] font-medium uppercase tracking-[0.35em] text-muted-foreground">
+                Import Students from CSV
+              </h3>
+              <button onClick={resetImport}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm font-light text-muted-foreground">
+                Columns: first_name, last_name, date_of_birth, join_date, class_name, parent_email.
+                Classes will be created if they don't exist. Use commas to enrol in multiple classes.
+              </p>
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.15em] text-accent hover:underline"
+              >
+                <Download className="h-3 w-3" /> Download template
+              </button>
+              <label className="block">
+                <div className="flex items-center justify-center border border-dashed border-foreground/20 px-4 py-6 cursor-pointer hover:border-accent transition-colors">
+                  <span className="text-sm font-light text-muted-foreground">
+                    {csvFile ? csvFile.name : "Choose CSV file"}
+                  </span>
+                </div>
+                <input type="file" accept=".csv" className="hidden" onChange={handleCsvSelect} />
+              </label>
+              {csvStudents.length > 0 && (
+                <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+                  {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
+                  {csvStudents.some(s => s.class_name) &&
+                    ` · ${[...new Set(csvStudents.map(s => s.class_name).filter(Boolean))].length} class(es)`}
+                </p>
+              )}
+              <Button
+                onClick={() => importCsvMutation.mutate()}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending}
+                className="w-full"
+              >
+                {importCsvMutation.isPending ? "Importing…" : csvStudents.length > 0 ? `Import ${csvStudents.length} Students` : "Import"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Add Student Form */}
         {showForm && (
