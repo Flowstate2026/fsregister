@@ -118,7 +118,7 @@ const RetentionDashboard = () => {
                   {recentNotes.map((note) => (
                     <button
                       key={note.id}
-                      onClick={() => navigate(`/student/${note.studentName ? note.studentName.split(" ").join("-") : ""}`)}
+                      onClick={() => navigate(`/student/${note.studentId}`)}
                       className="w-full bg-card px-6 py-5 text-left shadow-[var(--shadow-card)] transition-all hover:bg-secondary/30 active:scale-[0.995]"
                     >
                       <div className="flex items-start justify-between gap-4">
