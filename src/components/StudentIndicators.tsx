@@ -8,7 +8,7 @@ interface StudentIndicatorsProps {
 }
 
 const StudentIndicators = ({ student, attendancePercent }: StudentIndicatorsProps) => {
-  const isNew = isNewStudent(student.join_date);
+  const isNew = isNewStudent(student.join_date) && !(student as any).bulk_imported;
   const noteNeeded = checkNeedsNote(student.notes);
   const atRisk = checkIsAtRisk(attendancePercent);
 
