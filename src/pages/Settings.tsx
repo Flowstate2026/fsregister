@@ -7,7 +7,6 @@ import SchoolDetails from "@/components/settings/SchoolDetails";
 import ManageTeachers from "@/components/settings/ManageTeachers";
 import CancelledDates from "@/components/settings/CancelledDates";
 import AccountSection from "@/components/settings/AccountSection";
-import ClassesSection from "@/components/settings/ClassesSection";
 
 
 export default function Settings() {
@@ -42,7 +41,7 @@ export default function Settings() {
 
         <SchoolDetails schoolId={schoolId} />
         <ManageTeachers schoolId={schoolId} />
-        <ClassesSection schoolId={schoolId} />
+        
         <CancelledDates schoolId={schoolId} />
         
         <AccountSection schoolId={schoolId} schoolName={schoolName} />
