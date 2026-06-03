@@ -36,6 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchError) throw fetchError;
     if (existingProfile || !schoolId) return;
 
+    // Verify the school still exists; if not, clear the stale metadata and bail.
+    const { data: schoolRow } = await supabase
+      .from("schools")
+      .select("id")
+      .eq("id", schoolId)
+      .maybeSingle();
+
+    if (!schoolRow) {
+      await supabase.rpc("clear_stale_school_id");
+      return;
+    }
+
     const fullName =
       (currentUser.user_metadata?.full_name as string | undefined)?.trim() ||
       currentUser.email ||
@@ -48,7 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       school_id: schoolId,
     });
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      // Foreign key violation — school disappeared between checks. Clear and continue.
+      if ((insertError as { code?: string }).code === "23503") {
+        await supabase.rpc("clear_stale_school_id");
+        return;
+      }
+      throw insertError;
+    }
   };
 
   const fetchProfile = async (currentUser: User) => {
