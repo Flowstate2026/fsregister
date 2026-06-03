@@ -301,25 +301,23 @@ const OwnerStudents = () => {
               <Archive className="h-3.5 w-3.5 mr-1" />
               {showArchived ? "Active" : "Archived"}
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowImport(true)}
+              className="text-[10px] uppercase tracking-[0.15em]"
+            >
+              <Upload className="h-3.5 w-3.5 mr-1" /> Import CSV
+            </Button>
             {!showArchived && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowImport(true)}
-                  className="text-[10px] uppercase tracking-[0.15em]"
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1" /> Import CSV
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowForm(true)}
-                  className="text-[10px] uppercase tracking-[0.15em]"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowForm(true)}
+                className="text-[10px] uppercase tracking-[0.15em]"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add
+              </Button>
             )}
           </div>
         </div>
