@@ -336,7 +336,7 @@ const OwnerStudents = () => {
             <div className="space-y-4">
               <p className="text-sm font-light text-muted-foreground">
                 Columns: first_name, last_name, date_of_birth, join_date, class_name, parent_email.
-                Classes will be created if they don't exist. Use commas to enrol in multiple classes.
+                Dates use DD/MM/YYYY. Classes will be created if they don't exist. Use commas to enrol in multiple classes.
               </p>
               <button
                 type="button"
