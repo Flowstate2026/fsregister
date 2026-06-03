@@ -17,7 +17,7 @@ import {
   calculateAttendancePercentage,
   isAtRisk,
 } from "@/lib/student-utils";
-import { Search, Plus, X, CalendarIcon, Archive } from "lucide-react";
+import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
