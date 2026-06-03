@@ -22,7 +22,7 @@ const RetentionDashboard = () => {
     return {
       ...s,
       percent,
-      isNew: isNewStudent(s.join_date),
+      isNew: isNewStudent(s.join_date) && !(s as any).bulk_imported,
       needsNote: checkNeedsNote(s.notes),
       atRisk: isAtRisk(percent),
       className,

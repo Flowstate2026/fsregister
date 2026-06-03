@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { parseCsvDate } from "@/lib/csv-date";
+import { parseCsvLine } from "@/lib/csv-parse";
 
 export interface OnboardingState {
   // GDPR step
@@ -71,14 +72,12 @@ export function useOnboardingState() {
         return;
       }
 
-      const headers = lines[0]
-        .split(",")
-        .map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
 
       const students = lines
         .slice(1)
         .map((line) => {
-          const parts = line.split(",").map((s) => s.trim().replace(/"/g, ""));
+          const parts = parseCsvLine(line);
           const row: Record<string, string> = {};
           headers.forEach((h, i) => {
             row[h] = parts[i] || "";
