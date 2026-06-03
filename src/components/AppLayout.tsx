@@ -53,14 +53,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center gap-1 px-5 py-2 text-[9px] tracking-[0.25em] uppercase transition-colors ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 md:px-5 text-[9px] tracking-[0.25em] uppercase transition-colors ${
                 isActive(path)
                   ? "text-accent"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Icon className={`h-4 w-4 ${isActive(path) ? "stroke-[2]" : "stroke-[1.5]"}`} />
-              {label}
+              <span className="hidden md:inline">{label}</span>
             </button>
           ))}
         </div>
