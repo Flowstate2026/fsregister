@@ -7,6 +7,7 @@ import SchoolDetails from "@/components/settings/SchoolDetails";
 import ManageTeachers from "@/components/settings/ManageTeachers";
 import CancelledDates from "@/components/settings/CancelledDates";
 import AccountSection from "@/components/settings/AccountSection";
+import ClassesSection from "@/components/settings/ClassesSection";
 
 
 export default function Settings() {
