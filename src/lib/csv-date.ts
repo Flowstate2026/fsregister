@@ -19,10 +19,10 @@ export function parseCsvDate(input?: string): string | undefined {
   }
 
   // DD/MM/YYYY or DD-MM-YYYY (also accepts D/M/YYYY)
-  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (dmy) {
-    let [, d, m, y] = dmy;
-    if (y.length === 2) y = `20${y}`;
+    const [, d, m, yRaw] = dmy;
+    const y = yRaw.length === 2 ? `20${yRaw}` : yRaw;
     return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
 

@@ -16,15 +16,12 @@ const TodayClasses = () => {
   const { data: classes, isLoading } = useQuery({
     queryKey: ["today-classes", today, user?.id, isOwner, todayDate],
     queryFn: async () => {
-      let query = supabase
+      // Teachers see all classes in their school (RLS scopes by school_id)
+      const { data, error } = await supabase
         .from("classes")
         .select("*, class_enrollments(count)")
         .order("time_of_day")
         .eq("day_of_week", today);
-
-      // Teachers see all classes in their school (RLS scopes by school_id)
-
-      const { data, error } = await query;
       if (error) throw error;
 
       const { data: cancelled } = await supabase
