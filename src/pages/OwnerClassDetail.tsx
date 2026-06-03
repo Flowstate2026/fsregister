@@ -73,7 +73,7 @@ const OwnerClassDetail = () => {
         .maybeSingle(),
       supabase
         .from("class_enrollments")
-        .select("students(id, first_name, last_name, archived)")
+        .select("students(id, first_name, last_name, archived, join_date, bulk_imported)")
         .eq("class_id", classId),
     ]);
 
@@ -86,7 +86,22 @@ const OwnerClassDetail = () => {
       .map((e: any) => e.students)
       .filter((s: any) => s && !s.archived) as EnrolledStudent[])
       .sort((a, b) => a.first_name.localeCompare(b.first_name));
-    setStudents(list);
+
+    if (list.length > 0) {
+      const studentIds = list.map((s) => s.id);
+      const [{ data: attendance }, { data: notes }] = await Promise.all([
+        supabase.from("attendance_records").select("*").in("student_id", studentIds),
+        supabase.from("student_notes").select("*").in("student_id", studentIds),
+      ]);
+      const enriched = list.map((s) => ({
+        ...s,
+        attendance: attendance?.filter((a) => a.student_id === s.id) || [],
+        notes: (notes?.filter((n) => n.student_id === s.id) || []).map((n) => ({ ...n, author_name: null })),
+      }));
+      setStudents(enriched);
+    } else {
+      setStudents([]);
+    }
     setLoading(false);
   };
 
