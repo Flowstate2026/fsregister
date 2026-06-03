@@ -3,6 +3,7 @@ import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/components/AppLayout";
+import StudentIndicators from "@/components/StudentIndicators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getDayName, formatTime } from "@/lib/student-utils";
+import { getDayName, formatTime, calculateAttendancePercentage } from "@/lib/student-utils";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, CalendarDays, Pencil, Save, X, User } from "lucide-react";
 
@@ -38,6 +39,10 @@ interface EnrolledStudent {
   id: string;
   first_name: string;
   last_name: string;
+  join_date: string;
+  bulk_imported: boolean;
+  attendance: any[];
+  notes: any[];
 }
 
 const OwnerClassDetail = () => {
@@ -68,7 +73,7 @@ const OwnerClassDetail = () => {
         .maybeSingle(),
       supabase
         .from("class_enrollments")
-        .select("students(id, first_name, last_name, archived)")
+        .select("students(id, first_name, last_name, archived, join_date, bulk_imported)")
         .eq("class_id", classId),
     ]);
 
@@ -81,7 +86,22 @@ const OwnerClassDetail = () => {
       .map((e: any) => e.students)
       .filter((s: any) => s && !s.archived) as EnrolledStudent[])
       .sort((a, b) => a.first_name.localeCompare(b.first_name));
-    setStudents(list);
+
+    if (list.length > 0) {
+      const studentIds = list.map((s) => s.id);
+      const [{ data: attendance }, { data: notes }] = await Promise.all([
+        supabase.from("attendance_records").select("*").in("student_id", studentIds),
+        supabase.from("student_notes").select("*").in("student_id", studentIds),
+      ]);
+      const enriched = list.map((s) => ({
+        ...s,
+        attendance: attendance?.filter((a) => a.student_id === s.id) || [],
+        notes: (notes?.filter((n) => n.student_id === s.id) || []).map((n) => ({ ...n, author_name: null })),
+      }));
+      setStudents(enriched);
+    } else {
+      setStudents([]);
+    }
     setLoading(false);
   };
 
@@ -184,18 +204,27 @@ const OwnerClassDetail = () => {
                 <p className="text-sm text-muted-foreground">No students enrolled</p>
               ) : (
                 <div className="divide-y divide-border/40">
-                  {students.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => navigate(`/student/${s.id}`)}
-                      className="flex w-full items-center gap-3 bg-card px-6 py-4 text-left transition-all hover:bg-secondary/30"
-                    >
-                      <User className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <span className="text-sm text-foreground">
-                        {s.first_name} {s.last_name}
-                      </span>
-                    </button>
-                  ))}
+                  {students.map((s) => {
+                    const percent = calculateAttendancePercentage(s.attendance);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => navigate(`/student/${s.id}`)}
+                        className="flex w-full items-center justify-between bg-card px-6 py-4 text-left transition-all hover:bg-secondary/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <User className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span className="text-sm text-foreground">
+                            {s.first_name} {s.last_name}
+                          </span>
+                        </div>
+                        <StudentIndicators
+                          student={s as any}
+                          attendancePercent={percent}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
