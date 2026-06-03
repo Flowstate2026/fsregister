@@ -145,12 +145,13 @@ export default function ClassesSection({ schoolId }: Props) {
                         </SelectContent>
                       </Select>
                       <div className="relative">
-                        <Clock className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Clock className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <Input
+                          type="time"
+                          step={60}
                           value={editTime}
                           onChange={(e) => setEditTime(e.target.value)}
-                          placeholder="e.g. 16:30"
-                          className="h-9 w-28 pl-7 text-xs"
+                          className="h-9 w-32 pl-7 text-xs"
                         />
                       </div>
                       <Button
