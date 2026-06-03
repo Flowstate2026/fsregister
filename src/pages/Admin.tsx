@@ -6,8 +6,9 @@ import AdminWebhooks from "@/components/admin/AdminWebhooks";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [adminPassword, setAdminPassword] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
+  const [enteredAdminPassword, setEnteredAdminPassword] = useState("");
+  const [verifiedAdminPassword, setVerifiedAdminPassword] = useState("");
+  const authenticated = verifiedAdminPassword.length > 0;
   const [schoolName, setSchoolName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminUserPassword, setAdminUserPassword] = useState("");
@@ -29,15 +30,25 @@ const Admin = () => {
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  const invokeAdminFunction = async <T extends Record<string, unknown>>(
+    functionName: string,
+    body: T,
+  ) => {
+    return supabase.functions.invoke(functionName, {
+      body: {
+        ...body,
+        admin_password: verifiedAdminPassword,
+      },
+    });
+  };
+
   const handleDeleteSchool = async () => {
     const target = schools.find((s) => s.id === deleteSchoolId);
     if (!target) { toast.error("Select a school"); return; }
     if (deleteConfirmName !== target.name) { toast.error("School name does not match"); return; }
     setDeleting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-delete-school", {
-        body: { admin_password: adminPassword, school_id: deleteSchoolId },
-      });
+      const { data, error } = await invokeAdminFunction("admin-delete-school", { school_id: deleteSchoolId });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast.success(`Deleted "${target.name}"`);
@@ -53,13 +64,12 @@ const Admin = () => {
 
   useEffect(() => {
     if (authenticated) {
-      supabase.functions
-        .invoke("admin-list-schools", { body: { admin_password: adminPassword } })
+      invokeAdminFunction("admin-list-schools", {})
         .then(({ data }) => {
           if (data?.schools) setSchools(data.schools);
         });
     }
-  }, [authenticated, adminPassword]);
+  }, [authenticated, verifiedAdminPassword]);
 
   const handleRunWebhookCheck = async () => {
     if (!webhookSchoolId) { toast.error("Select a school"); return; }
@@ -71,8 +81,9 @@ const Admin = () => {
         studentIds = webhookStudentIds.split(",").map((s) => s.trim()).filter(Boolean);
       }
 
-      const { data, error } = await supabase.functions.invoke("check-attendance-webhooks", {
-        body: { student_ids: studentIds, school_id: webhookSchoolId, admin_password: adminPassword },
+      const { data, error } = await invokeAdminFunction("check-attendance-webhooks", {
+        student_ids: studentIds,
+        school_id: webhookSchoolId,
       });
 
       if (error) {
@@ -94,9 +105,7 @@ const Admin = () => {
     setSeedRunning(true);
     setSeedResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-seed-test-data", {
-        body: { admin_password: adminPassword, school_id: webhookSchoolId },
-      });
+      const { data, error } = await invokeAdminFunction("admin-seed-test-data", { school_id: webhookSchoolId });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setSeedResult(JSON.stringify(data, null, 2));
@@ -114,13 +123,10 @@ const Admin = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("create-school", {
-        body: {
-          admin_password: adminPassword,
-          school_name: schoolName,
-          admin_email: adminEmail,
-          admin_user_password: adminUserPassword,
-        },
+      const { data, error } = await invokeAdminFunction("create-school", {
+        school_name: schoolName,
+        admin_email: adminEmail,
+        admin_user_password: adminUserPassword,
       });
 
       if (error) throw error;
@@ -147,19 +153,25 @@ const Admin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!enteredAdminPassword.trim()) {
+      toast.error("Enter the admin password");
+      return;
+    }
     setLoading(true);
     try {
       // Verify the entered password against the stored ADMIN_SETUP_PASSWORD
       // by calling an admin endpoint that checks it. Does NOT modify the secret.
       const { data, error } = await supabase.functions.invoke("admin-list-schools", {
-        body: { admin_password: adminPassword },
+        body: { admin_password: enteredAdminPassword },
       });
       if (error || (data as any)?.error) {
+        setVerifiedAdminPassword("");
         toast.error("Incorrect admin password");
         return;
       }
-      setAuthenticated(true);
+      setVerifiedAdminPassword(enteredAdminPassword);
     } catch {
+      setVerifiedAdminPassword("");
       toast.error("Could not verify password");
     } finally {
       setLoading(false);
@@ -174,8 +186,8 @@ const Admin = () => {
           <label style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Admin Password</label>
           <input
             type="password"
-            value={adminPassword}
-            onChange={(e) => setAdminPassword(e.target.value)}
+            value={enteredAdminPassword}
+            onChange={(e) => setEnteredAdminPassword(e.target.value)}
             required
             style={{ ...inputStyle, marginBottom: 16 }}
           />
@@ -215,7 +227,7 @@ const Admin = () => {
       </section>
 
       {/* Webhooks */}
-      <AdminWebhooks adminPassword={adminPassword} />
+      <AdminWebhooks adminPassword={verifiedAdminPassword} />
 
       {/* Manual Webhook Check */}
       <section style={{ marginTop: 48 }}>
