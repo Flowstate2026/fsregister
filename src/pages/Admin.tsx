@@ -6,9 +6,9 @@ import AdminWebhooks from "@/components/admin/AdminWebhooks";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [enteredAdminPassword, setEnteredAdminPassword] = useState("");
-  const [verifiedAdminPassword, setVerifiedAdminPassword] = useState("");
-  const authenticated = verifiedAdminPassword.length > 0;
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminUserPassword, setAdminUserPassword] = useState("");
@@ -37,7 +37,7 @@ const Admin = () => {
     return supabase.functions.invoke(functionName, {
       body: {
         ...body,
-        admin_password: verifiedAdminPassword,
+        admin_password: adminPassword,
       },
     });
   };
@@ -63,13 +63,13 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (authenticated) {
+    if (isAuthenticated) {
       invokeAdminFunction("admin-list-schools", {})
         .then(({ data }) => {
           if (data?.schools) setSchools(data.schools);
         });
     }
-  }, [authenticated, verifiedAdminPassword]);
+  }, [isAuthenticated, adminPassword]);
 
   const handleRunWebhookCheck = async () => {
     if (!webhookSchoolId) { toast.error("Select a school"); return; }
@@ -123,10 +123,13 @@ const Admin = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await invokeAdminFunction("create-school", {
-        school_name: schoolName,
-        admin_email: adminEmail,
-        admin_user_password: adminUserPassword,
+      const { data, error } = await supabase.functions.invoke("create-school", {
+        body: {
+          admin_password: adminPassword,
+          school_name: schoolName,
+          admin_email: adminEmail,
+          admin_user_password: adminUserPassword,
+        },
       });
 
       if (error) throw error;
@@ -151,34 +154,17 @@ const Admin = () => {
     width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, fontSize: 13,
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!enteredAdminPassword.trim()) {
+    if (!passwordInput.trim()) {
       toast.error("Enter the admin password");
       return;
     }
-    setLoading(true);
-    try {
-      // Verify the entered password against the stored ADMIN_SETUP_PASSWORD
-      // by calling an admin endpoint that checks it. Does NOT modify the secret.
-      const { data, error } = await supabase.functions.invoke("admin-list-schools", {
-        body: { admin_password: enteredAdminPassword },
-      });
-      if (error || (data as any)?.error) {
-        setVerifiedAdminPassword("");
-        toast.error("Incorrect admin password");
-        return;
-      }
-      setVerifiedAdminPassword(enteredAdminPassword);
-    } catch {
-      setVerifiedAdminPassword("");
-      toast.error("Could not verify password");
-    } finally {
-      setLoading(false);
-    }
+    setAdminPassword(passwordInput);
+    setIsAuthenticated(true);
   };
 
-  if (!authenticated) {
+  if (!isAuthenticated) {
     return (
       <div style={{ maxWidth: 400, margin: "80px auto", padding: 24, fontFamily: "system-ui" }}>
         <h1 style={{ fontSize: 20, marginBottom: 24 }}>Admin Access</h1>
@@ -186,13 +172,13 @@ const Admin = () => {
           <label style={{ display: "block", marginBottom: 8, fontSize: 13 }}>Admin Password</label>
           <input
             type="password"
-            value={enteredAdminPassword}
-            onChange={(e) => setEnteredAdminPassword(e.target.value)}
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
             required
             style={{ ...inputStyle, marginBottom: 16 }}
           />
-          <button type="submit" disabled={loading} style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
-            {loading ? "Checking…" : "Enter"}
+          <button type="submit" style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer" }}>
+            Enter
           </button>
         </form>
       </div>
@@ -227,7 +213,7 @@ const Admin = () => {
       </section>
 
       {/* Webhooks */}
-      <AdminWebhooks adminPassword={verifiedAdminPassword} />
+      <AdminWebhooks adminPassword={adminPassword} />
 
       {/* Manual Webhook Check */}
       <section style={{ marginTop: 48 }}>
