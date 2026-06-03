@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAllStudentsWithDetails } from "@/hooks/useStudentWithDetails";
+import { useRecentNotes } from "@/hooks/useRecentNotes";
 import AppLayout from "@/components/AppLayout";
 import {
   isNewStudent,
@@ -7,7 +8,9 @@ import {
   calculateAttendancePercentage,
   isAtRisk,
 } from "@/lib/student-utils";
-import { Star, AlertTriangle, PenLine } from "lucide-react";
+import { Star, AlertTriangle, PenLine, StickyNote } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
 
 const RetentionDashboard = () => {
   const navigate = useNavigate();
