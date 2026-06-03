@@ -159,7 +159,7 @@ const OwnerStudents = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,2015-03-12,2025-01-10,Junior Ballet,parent@example.com\n";
+    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
