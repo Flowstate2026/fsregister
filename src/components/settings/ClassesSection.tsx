@@ -60,10 +60,12 @@ export default function ClassesSection({ schoolId }: Props) {
     fetchClasses();
   }, [schoolId]);
 
+  const formatTime = (t: string) => (t ? t.slice(0, 5) : "");
+
   const handleEdit = (cls: ClassItem) => {
     setEditingId(cls.id);
     setEditDay(cls.day_of_week);
-    setEditTime(cls.time_of_day);
+    setEditTime(formatTime(cls.time_of_day));
   };
 
   const handleCancel = () => {
