@@ -11,43 +11,30 @@ type ParentReply = Tables<"parent_replies">;
 
 const SUPABASE_BATCH_SIZE = 1000;
 
-async function fetchAllEnrolledStudentIds(classId: string) {
-  const studentIds: string[] = [];
+async function fetchAllClassEnrollmentStudents(classId: string) {
+  const students: Student[] = [];
 
   for (let from = 0; ; from += SUPABASE_BATCH_SIZE) {
     const to = from + SUPABASE_BATCH_SIZE - 1;
     const { data, error } = await supabase
       .from("class_enrollments")
-      .select("student_id")
+      .select("students(*)")
       .eq("class_id", classId)
       .range(from, to);
 
     if (error) throw error;
     if (!data?.length) break;
 
-    studentIds.push(...data.map((enrollment) => enrollment.student_id));
+    students.push(
+      ...data
+        .map((enrollment) => enrollment.students as Student | null)
+        .filter((student): student is Student => Boolean(student))
+    );
 
     if (data.length < SUPABASE_BATCH_SIZE) break;
   }
 
-  return [...new Set(studentIds)];
-}
-
-async function fetchStudentsByIds(studentIds: string[]) {
-  const students: Student[] = [];
-
-  for (let index = 0; index < studentIds.length; index += SUPABASE_BATCH_SIZE) {
-    const chunk = studentIds.slice(index, index + SUPABASE_BATCH_SIZE);
-    const { data, error } = await supabase
-      .from("students")
-      .select("*")
-      .in("id", chunk);
-
-    if (error) throw error;
-    students.push(...(data || []));
-  }
-
-  return students;
+  return Array.from(new Map(students.map((student) => [student.id, student])).values());
 }
 
 export interface ParentReplyWithNote extends ParentReply {
@@ -241,37 +228,30 @@ export function useClassStudents(classId: string | undefined) {
     queryFn: async () => {
       if (!classId) throw new Error("No class ID provided");
 
-      const enrolledStudentIds = await fetchAllEnrolledStudentIds(classId);
-
-      if (!enrolledStudentIds.length) return [];
-
-      const studentRows = await fetchStudentsByIds(enrolledStudentIds);
-
-      if (studentRows.length !== enrolledStudentIds.length) {
-        throw new Error("Some enrolled students could not be loaded for this register");
-      }
-
-      const students = studentRows
+      const students = (await fetchAllClassEnrollmentStudents(classId))
         .filter((student) => !student.archived)
-        .sort((a, b) => a.last_name.localeCompare(b.last_name));
+        .sort(
+        (a, b) => a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
+      );
 
       if (!students.length) return [];
 
       const studentIds = students.map((s) => s.id);
-      const { data: attendance } = await supabase
-        .from("attendance_records")
-        .select("*")
-        .in("student_id", studentIds);
+      const [attendanceResult, notesResult] = await Promise.all([
+        supabase.from("attendance_records").select("*").in("student_id", studentIds),
+        supabase.from("student_notes").select("*").in("student_id", studentIds),
+      ]);
 
-      const { data: notes } = await supabase
-        .from("student_notes")
-        .select("*")
-        .in("student_id", studentIds);
+      if (attendanceResult.error) throw attendanceResult.error;
+      if (notesResult.error) throw notesResult.error;
+
+      const attendance = attendanceResult.data || [];
+      const notes = notesResult.data || [];
 
       return students.map((student) => ({
         ...student,
-        attendance: attendance?.filter((a) => a.student_id === student.id) || [],
-        notes: notes?.filter((n) => n.student_id === student.id) || [],
+        attendance: attendance.filter((a) => a.student_id === student.id),
+        notes: notes.filter((n) => n.student_id === student.id),
       })) as StudentWithDetails[];
     },
     enabled: !!classId,
