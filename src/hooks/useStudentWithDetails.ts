@@ -9,6 +9,47 @@ type StudentNote = Tables<"student_notes">;
 type Profile = Tables<"profiles">;
 type ParentReply = Tables<"parent_replies">;
 
+const SUPABASE_BATCH_SIZE = 1000;
+
+async function fetchAllEnrolledStudentIds(classId: string) {
+  const studentIds: string[] = [];
+
+  for (let from = 0; ; from += SUPABASE_BATCH_SIZE) {
+    const to = from + SUPABASE_BATCH_SIZE - 1;
+    const { data, error } = await supabase
+      .from("class_enrollments")
+      .select("student_id")
+      .eq("class_id", classId)
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    studentIds.push(...data.map((enrollment) => enrollment.student_id));
+
+    if (data.length < SUPABASE_BATCH_SIZE) break;
+  }
+
+  return [...new Set(studentIds)];
+}
+
+async function fetchStudentsByIds(studentIds: string[]) {
+  const students: Student[] = [];
+
+  for (let index = 0; index < studentIds.length; index += SUPABASE_BATCH_SIZE) {
+    const chunk = studentIds.slice(index, index + SUPABASE_BATCH_SIZE);
+    const { data, error } = await supabase
+      .from("students")
+      .select("*")
+      .in("id", chunk);
+
+    if (error) throw error;
+    students.push(...(data || []));
+  }
+
+  return students;
+}
+
 export interface ParentReplyWithNote extends ParentReply {
   note_text?: string | null;
 }
@@ -200,16 +241,18 @@ export function useClassStudents(classId: string | undefined) {
     queryFn: async () => {
       if (!classId) throw new Error("No class ID provided");
 
-      const { data: enrollments, error } = await supabase
-        .from("class_enrollments")
-        .select("student_id, students(*)")
-        .eq("class_id", classId);
+      const enrolledStudentIds = await fetchAllEnrolledStudentIds(classId);
 
-      if (error) throw error;
+      if (!enrolledStudentIds.length) return [];
 
-      const students = (enrollments || [])
-        .map((e) => e.students)
-        .filter((s): s is Student => s !== null && !s.archived)
+      const studentRows = await fetchStudentsByIds(enrolledStudentIds);
+
+      if (studentRows.length !== enrolledStudentIds.length) {
+        throw new Error("Some enrolled students could not be loaded for this register");
+      }
+
+      const students = studentRows
+        .filter((student) => !student.archived)
         .sort((a, b) => a.last_name.localeCompare(b.last_name));
 
       if (!students.length) return [];
