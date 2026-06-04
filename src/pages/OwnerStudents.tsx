@@ -19,7 +19,7 @@ import {
 } from "@/lib/student-utils";
 import { Search, Plus, X, CalendarIcon, Archive, Upload, Download } from "lucide-react";
 import { parseCsvDate } from "@/lib/csv-date";
-import { parseCsvLine } from "@/lib/csv-parse";
+import { parseCsvText, splitClassNames } from "@/lib/csv-parse";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -41,6 +41,11 @@ const OwnerStudents = () => {
     join_date?: string;
     class_name?: string;
     parent_email?: string;
+  }>>([]);
+  const [csvDebugPreview, setCsvDebugPreview] = useState<Array<{
+    name: string;
+    rawClassName: string;
+    parsedClasses: string[];
   }>>([]);
 
   // Form state
@@ -157,6 +162,7 @@ const OwnerStudents = () => {
     setShowImport(false);
     setCsvFile(null);
     setCsvStudents([]);
+    setCsvDebugPreview([]);
   };
 
   const downloadTemplate = () => {
@@ -175,11 +181,14 @@ const OwnerStudents = () => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) { setCsvStudents([]); return; }
-      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
-      const students = lines.slice(1).map((line) => {
-        const parts = parseCsvLine(line);
+      const rows = parseCsvText(text);
+      if (rows.length < 2) {
+        setCsvStudents([]);
+        setCsvDebugPreview([]);
+        return;
+      }
+      const headers = rows[0].map((h) => h.toLowerCase());
+      const students = rows.slice(1).map((parts) => {
         const row: Record<string, string> = {};
         headers.forEach((h, i) => { row[h] = parts[i] || ""; });
         return {
@@ -192,6 +201,17 @@ const OwnerStudents = () => {
         };
       }).filter((s) => s.first_name);
       setCsvStudents(students);
+
+      setCsvDebugPreview(
+        students
+          .filter((student) => student.class_name)
+          .slice(0, 5)
+          .map((student) => ({
+            name: `${student.first_name} ${student.last_name}`.trim(),
+            rawClassName: student.class_name || "",
+            parsedClasses: splitClassNames(student.class_name),
+          }))
+      );
     };
     reader.readAsText(file);
   };
@@ -201,9 +221,7 @@ const OwnerStudents = () => {
       if (!schoolId) throw new Error("No school");
       if (csvStudents.length === 0) throw new Error("No students to import");
 
-      const studentClasses: string[][] = csvStudents.map((s) =>
-        (s.class_name || "").split(",").map((c) => c.trim()).filter(Boolean)
-      );
+      const studentClasses: string[][] = csvStudents.map((s) => splitClassNames(s.class_name));
       const classNames = [...new Set(studentClasses.flat())];
       const classMap: Record<string, string> = {};
 
@@ -280,9 +298,7 @@ const OwnerStudents = () => {
       if (!schoolId) throw new Error("No school");
       if (csvStudents.length === 0) throw new Error("No rows to process");
 
-      const studentClasses: string[][] = csvStudents.map((s) =>
-        (s.class_name || "").split(",").map((c) => c.trim()).filter(Boolean)
-      );
+      const studentClasses: string[][] = csvStudents.map((s) => splitClassNames(s.class_name));
       const classNames = [...new Set(studentClasses.flat())];
       const classMap: Record<string, string> = {};
 
