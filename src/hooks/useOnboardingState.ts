@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { parseCsvDate } from "@/lib/csv-date";
-import { parseCsvLine } from "@/lib/csv-parse";
+import { parseCsvText } from "@/lib/csv-parse";
 
 export interface OnboardingState {
   // GDPR step
@@ -66,18 +66,17 @@ export function useOnboardingState() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) {
+      const rows = parseCsvText(text);
+      if (rows.length < 2) {
         setCsvStudents([]);
         return;
       }
 
-      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
+      const headers = rows[0].map((h) => h.toLowerCase());
 
-      const students = lines
+      const students = rows
         .slice(1)
-        .map((line) => {
-          const parts = parseCsvLine(line);
+        .map((parts) => {
           const row: Record<string, string> = {};
           headers.forEach((h, i) => {
             row[h] = parts[i] || "";
