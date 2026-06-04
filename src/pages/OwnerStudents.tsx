@@ -454,11 +454,22 @@ const OwnerStudents = () => {
               )}
               <Button
                 onClick={() => importCsvMutation.mutate()}
-                disabled={csvStudents.length === 0 || importCsvMutation.isPending}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending || syncEnrollmentsMutation.isPending}
                 className="w-full"
               >
                 {importCsvMutation.isPending ? "Importing…" : csvStudents.length > 0 ? `Import ${csvStudents.length} Students` : "Import"}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => syncEnrollmentsMutation.mutate()}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending || syncEnrollmentsMutation.isPending}
+                className="w-full"
+              >
+                {syncEnrollmentsMutation.isPending ? "Syncing…" : "Sync Enrolments Only (skip creating students)"}
+              </Button>
+              <p className="text-[11px] font-light text-muted-foreground">
+                Use "Sync Enrolments Only" to repair missing class enrolments for students that already exist. Matches by first &amp; last name within this school.
+              </p>
             </div>
           </div>
         )}
