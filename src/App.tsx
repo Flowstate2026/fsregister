@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import ParentNote from "./pages/ParentNote";
 import OwnerClasses from "./pages/OwnerClasses";
 import OwnerClassDetail from "./pages/OwnerClassDetail";
+import OwnerActivity from "./pages/OwnerActivity";
 
 const queryClient = new QueryClient();
 
