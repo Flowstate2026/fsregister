@@ -462,11 +462,25 @@ const OwnerStudents = () => {
                 <input type="file" accept=".csv" className="hidden" onChange={handleCsvSelect} />
               </label>
               {csvStudents.length > 0 && (
-                <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-                  {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
-                  {csvStudents.some(s => s.class_name) &&
-                    ` · ${[...new Set(csvStudents.map(s => s.class_name).filter(Boolean))].length} class(es)`}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+                    {csvStudents.length} student{csvStudents.length !== 1 ? "s" : ""} found
+                    {csvStudents.some(s => s.class_name) &&
+                      ` · ${[...new Set(csvStudents.flatMap((s) => splitClassNames(s.class_name)))].length} class(es)`}
+                  </p>
+                  {csvDebugPreview.length > 0 && (
+                    <div className="space-y-1 text-[11px] font-light text-muted-foreground">
+                      <p className="text-[10px] uppercase tracking-[0.2em]">Parsed class_name preview</p>
+                      {csvDebugPreview.map((entry) => (
+                        <div key={`${entry.name}-${entry.rawClassName}`} className="space-y-0.5 border-l border-border pl-3">
+                          <p className="text-foreground">{entry.name}</p>
+                          <p>Raw: {entry.rawClassName}</p>
+                          <p>Split: {entry.parsedClasses.join(" • ")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
               <Button
                 onClick={() => importCsvMutation.mutate()}
