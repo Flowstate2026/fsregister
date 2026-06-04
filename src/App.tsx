@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import ParentNote from "./pages/ParentNote";
 import OwnerClasses from "./pages/OwnerClasses";
 import OwnerClassDetail from "./pages/OwnerClassDetail";
+import OwnerActivity from "./pages/OwnerActivity";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
             <Route path="/data" element={<ProtectedRoute><DataManagement /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><TeacherStudents /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><TeacherNotes /></ProtectedRoute>} />
+            <Route path="/activity" element={<ProtectedRoute><OwnerActivity /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/reset-password" element={<ResetPassword />} />

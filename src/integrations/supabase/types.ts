@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          class_id: string
+          created_at: string
+          id: string
+          school_id: string
+          student_id: string
+          teacher_id: string
+        }
+        Insert: {
+          action: string
+          class_id: string
+          created_at?: string
+          id?: string
+          school_id: string
+          student_id: string
+          teacher_id: string
+        }
+        Update: {
+          action?: string
+          class_id?: string
+          created_at?: string
+          id?: string
+          school_id?: string
+          student_id?: string
+          teacher_id?: string
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           authorised: boolean
