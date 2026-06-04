@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
 import { parseCsvDate } from "@/lib/csv-date";
-import { parseCsvLine } from "@/lib/csv-parse";
+import { parseCsvText, splitClassNames } from "@/lib/csv-parse";
 
 const STEPS = [
   { label: "GDPR", icon: ShieldCheck },
@@ -194,11 +194,10 @@ export default function Onboarding() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      const lines = text.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) { setCsvStudents([]); return; }
-      const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
-      const students = lines.slice(1).map((line) => {
-        const parts = parseCsvLine(line);
+      const rows = parseCsvText(text);
+      if (rows.length < 2) { setCsvStudents([]); return; }
+      const headers = rows[0].map((h) => h.toLowerCase());
+      const students = rows.slice(1).map((parts) => {
         const row: Record<string, string> = {};
         headers.forEach((h, i) => { row[h] = parts[i] || ""; });
         return {
@@ -221,12 +220,7 @@ export default function Onboarding() {
     setLoading(true);
     try {
       // Parse comma-separated class names per student
-      const studentClasses: string[][] = csvStudents.map((s) =>
-        (s.class_name || "")
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean)
-      );
+      const studentClasses: string[][] = csvStudents.map((s) => splitClassNames(s.class_name));
 
       // Collect unique class names and ensure they exist
       const classNames = [...new Set(studentClasses.flat())];
