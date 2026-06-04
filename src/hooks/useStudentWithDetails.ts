@@ -9,6 +9,34 @@ type StudentNote = Tables<"student_notes">;
 type Profile = Tables<"profiles">;
 type ParentReply = Tables<"parent_replies">;
 
+const SUPABASE_BATCH_SIZE = 1000;
+
+async function fetchAllClassEnrollmentStudents(classId: string) {
+  const students: Student[] = [];
+
+  for (let from = 0; ; from += SUPABASE_BATCH_SIZE) {
+    const to = from + SUPABASE_BATCH_SIZE - 1;
+    const { data, error } = await supabase
+      .from("class_enrollments")
+      .select("students(*)")
+      .eq("class_id", classId)
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    students.push(
+      ...data
+        .map((enrollment) => enrollment.students as Student | null)
+        .filter((student): student is Student => Boolean(student))
+    );
+
+    if (data.length < SUPABASE_BATCH_SIZE) break;
+  }
+
+  return Array.from(new Map(students.map((student) => [student.id, student])).values());
+}
+
 export interface ParentReplyWithNote extends ParentReply {
   note_text?: string | null;
 }
@@ -200,23 +228,9 @@ export function useClassStudents(classId: string | undefined) {
     queryFn: async () => {
       if (!classId) throw new Error("No class ID provided");
 
-      const { data: enrollmentRows, error: enrollmentError } = await supabase
-        .from("class_enrollments")
-        .select("student_id, students(*)")
-        .eq("class_id", classId);
-
-      if (enrollmentError) throw enrollmentError;
-
-      const uniqueStudents = Array.from(
-        new Map(
-          ((enrollmentRows || []) as Array<{ student_id: string; students: Student | null }>)
-            .map((enrollment) => enrollment.students)
-            .filter((student): student is Student => Boolean(student) && !student.archived)
-            .map((student) => [student.id, student])
-        ).values()
-      );
-
-      const students = uniqueStudents.sort(
+      const students = (await fetchAllClassEnrollmentStudents(classId))
+        .filter((student) => !student.archived)
+        .sort(
         (a, b) => a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
       );
 
