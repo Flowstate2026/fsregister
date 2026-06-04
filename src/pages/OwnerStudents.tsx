@@ -250,9 +250,14 @@ const OwnerStudents = () => {
             if (classId) enrollments.push({ student_id: inserted[i].id, class_id: classId });
           });
         });
-        if (enrollments.length > 0) {
-          const { error: enrollErr } = await supabase.from("class_enrollments").insert(enrollments);
-          if (enrollErr) console.error("Enrollment error:", enrollErr);
+        // Chunk + upsert so a single duplicate or batch limit can't silently drop rows
+        const CHUNK = 500;
+        for (let i = 0; i < enrollments.length; i += CHUNK) {
+          const chunk = enrollments.slice(i, i + CHUNK);
+          const { error: enrollErr } = await supabase
+            .from("class_enrollments")
+            .upsert(chunk, { onConflict: "student_id,class_id", ignoreDuplicates: true });
+          if (enrollErr) throw enrollErr;
         }
       }
 
