@@ -250,9 +250,14 @@ const OwnerStudents = () => {
             if (classId) enrollments.push({ student_id: inserted[i].id, class_id: classId });
           });
         });
-        if (enrollments.length > 0) {
-          const { error: enrollErr } = await supabase.from("class_enrollments").insert(enrollments);
-          if (enrollErr) console.error("Enrollment error:", enrollErr);
+        // Chunk + upsert so a single duplicate or batch limit can't silently drop rows
+        const CHUNK = 500;
+        for (let i = 0; i < enrollments.length; i += CHUNK) {
+          const chunk = enrollments.slice(i, i + CHUNK);
+          const { error: enrollErr } = await supabase
+            .from("class_enrollments")
+            .upsert(chunk, { onConflict: "student_id,class_id", ignoreDuplicates: true });
+          if (enrollErr) throw enrollErr;
         }
       }
 
@@ -263,6 +268,93 @@ const OwnerStudents = () => {
       resetImport();
       queryClient.invalidateQueries({ queryKey: ["owner-students"] });
       queryClient.invalidateQueries({ queryKey: ["school-classes"] });
+    },
+    onError: (err) => toast.error((err as Error).message),
+  });
+
+  // Re-sync enrolments from the CSV without re-importing students.
+  // Matches existing students by first_name + last_name (case-insensitive) within
+  // this school and upserts any missing rows into class_enrollments.
+  const syncEnrollmentsMutation = useMutation({
+    mutationFn: async () => {
+      if (!schoolId) throw new Error("No school");
+      if (csvStudents.length === 0) throw new Error("No rows to process");
+
+      const studentClasses: string[][] = csvStudents.map((s) =>
+        (s.class_name || "").split(",").map((c) => c.trim()).filter(Boolean)
+      );
+      const classNames = [...new Set(studentClasses.flat())];
+      const classMap: Record<string, string> = {};
+
+      if (classNames.length > 0) {
+        const { data: existing, error: classErr } = await supabase
+          .from("classes").select("id, name").eq("school_id", schoolId);
+        if (classErr) throw classErr;
+        const existingMap: Record<string, string> = {};
+        (existing || []).forEach((c) => { existingMap[c.name.toLowerCase()] = c.id; });
+        for (const cn of classNames) {
+          const key = cn.toLowerCase();
+          if (existingMap[key]) {
+            classMap[key] = existingMap[key];
+          } else {
+            const { data: newClass, error } = await supabase
+              .from("classes")
+              .insert({ school_id: schoolId, name: cn, day_of_week: 1, time_of_day: "10:00" })
+              .select("id").single();
+            if (error) throw error;
+            classMap[key] = newClass.id;
+          }
+        }
+      }
+
+      // Page through all students in school
+      const allStudents: { id: string; first_name: string; last_name: string }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("students").select("id, first_name, last_name")
+          .eq("school_id", schoolId).range(from, from + 999);
+        if (error) throw error;
+        if (!data?.length) break;
+        allStudents.push(...data);
+        if (data.length < 1000) break;
+      }
+      const idByName = new Map<string, string>();
+      allStudents.forEach((s) =>
+        idByName.set(`${s.first_name.toLowerCase().trim()}|${s.last_name.toLowerCase().trim()}`, s.id)
+      );
+
+      const enrollments: { student_id: string; class_id: string }[] = [];
+      let missing = 0;
+      csvStudents.forEach((s, i) => {
+        const key = `${s.first_name.toLowerCase().trim()}|${s.last_name.toLowerCase().trim()}`;
+        const sid = idByName.get(key);
+        if (!sid) { missing++; return; }
+        studentClasses[i].forEach((cn) => {
+          const classId = classMap[cn.toLowerCase()];
+          if (classId) enrollments.push({ student_id: sid, class_id: classId });
+        });
+      });
+
+      let created = 0;
+      const CHUNK = 500;
+      for (let i = 0; i < enrollments.length; i += CHUNK) {
+        const chunk = enrollments.slice(i, i + CHUNK);
+        const { data, error } = await supabase
+          .from("class_enrollments")
+          .upsert(chunk, { onConflict: "student_id,class_id", ignoreDuplicates: true })
+          .select("id");
+        if (error) throw error;
+        created += data?.length ?? 0;
+      }
+
+      return { processed: enrollments.length, created, missing };
+    },
+    onSuccess: (r) => {
+      toast.success(
+        `Synced ${r.processed} enrolments — ${r.created} new${r.missing ? `, ${r.missing} students not matched` : ""}`
+      );
+      queryClient.invalidateQueries({ queryKey: ["owner-students"] });
+      queryClient.invalidateQueries({ queryKey: ["class-students"] });
     },
     onError: (err) => toast.error((err as Error).message),
   });
@@ -362,11 +454,22 @@ const OwnerStudents = () => {
               )}
               <Button
                 onClick={() => importCsvMutation.mutate()}
-                disabled={csvStudents.length === 0 || importCsvMutation.isPending}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending || syncEnrollmentsMutation.isPending}
                 className="w-full"
               >
                 {importCsvMutation.isPending ? "Importing…" : csvStudents.length > 0 ? `Import ${csvStudents.length} Students` : "Import"}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => syncEnrollmentsMutation.mutate()}
+                disabled={csvStudents.length === 0 || importCsvMutation.isPending || syncEnrollmentsMutation.isPending}
+                className="w-full"
+              >
+                {syncEnrollmentsMutation.isPending ? "Syncing…" : "Sync Enrolments Only (skip creating students)"}
+              </Button>
+              <p className="text-[11px] font-light text-muted-foreground">
+                Use "Sync Enrolments Only" to repair missing class enrolments for students that already exist. Matches by first &amp; last name within this school.
+              </p>
             </div>
           </div>
         )}
