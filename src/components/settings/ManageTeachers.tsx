@@ -5,7 +5,17 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Users, Mail, Trash2, CheckCircle2, Clock } from "lucide-react";
+import {
+  UserPlus,
+  Users,
+  Mail,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  ShieldCheck,
+  ArrowUpCircle,
+  ArrowDownCircle,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +30,10 @@ import {
 
 interface Teacher {
   id: string;
+  user_id: string;
   full_name: string;
   email: string;
+  isOwner: boolean;
 }
 
 interface Invite {
@@ -30,6 +42,8 @@ interface Invite {
   email: string;
   created_at: string;
   accepted_at: string | null;
+  expires_at: string;
+  role: "owner" | "teacher";
 }
 
 interface Props {
@@ -42,16 +56,32 @@ export default function ManageTeachers({ schoolId }: Props) {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [teacherName, setTeacherName] = useState("");
   const [teacherEmail, setTeacherEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"teacher" | "owner">("teacher");
   const [loading, setLoading] = useState(false);
+  const [actingId, setActingId] = useState<string | null>(null);
 
   const fetchData = async () => {
-    const [{ data: profileData }, { data: inviteData }] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email").eq("school_id", schoolId),
-      supabase.from("teacher_invites").select("id, full_name, email, created_at, accepted_at").eq("school_id", schoolId).order("created_at", { ascending: false }),
+    const [{ data: profileData }, { data: inviteData }, { data: rolesData }] = await Promise.all([
+      supabase.from("profiles").select("id, user_id, full_name, email").eq("school_id", schoolId),
+      supabase
+        .from("teacher_invites")
+        .select("id, full_name, email, created_at, accepted_at, expires_at, role")
+        .eq("school_id", schoolId)
+        .order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role").eq("school_id", schoolId),
     ]);
-    const otherProfiles = (profileData || []).filter((p) => p.id !== profile?.id);
-    setTeachers(otherProfiles);
-    setInvites(inviteData || []);
+    const ownerIds = new Set((rolesData || []).filter((r) => r.role === "owner").map((r) => r.user_id));
+    const list: Teacher[] = (profileData || [])
+      .filter((p) => p.id !== profile?.id)
+      .map((p) => ({
+        id: p.id,
+        user_id: p.user_id,
+        full_name: p.full_name,
+        email: p.email,
+        isOwner: ownerIds.has(p.user_id),
+      }));
+    setTeachers(list);
+    setInvites((inviteData || []) as Invite[]);
   };
 
   useEffect(() => {
@@ -70,14 +100,19 @@ export default function ManageTeachers({ schoolId }: Props) {
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) throw new Error("No active session. Please sign in again.");
       const { data, error } = await supabase.functions.invoke("invite-teacher", {
-        body: { email: teacherEmail.trim(), full_name: teacherName.trim() },
+        body: { email: teacherEmail.trim(), full_name: teacherName.trim(), role: inviteRole },
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success("Teacher invited — they'll receive a password reset email");
+      toast.success(
+        inviteRole === "owner"
+          ? "Co-owner invited — they'll receive an email to set up their account"
+          : "Teacher invited — they'll receive an email to set up their account"
+      );
       setTeacherName("");
       setTeacherEmail("");
+      setInviteRole("teacher");
       fetchData();
     } catch (err) {
       toast.error((err as Error).message);
@@ -87,7 +122,7 @@ export default function ManageTeachers({ schoolId }: Props) {
   };
 
   const handleDeleteTeacher = async (teacher: Teacher) => {
-    setLoading(true);
+    setActingId(teacher.id);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
@@ -103,7 +138,32 @@ export default function ManageTeachers({ schoolId }: Props) {
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
-      setLoading(false);
+      setActingId(null);
+    }
+  };
+
+  const handleSetRole = async (teacher: Teacher, role: "owner" | "teacher") => {
+    setActingId(teacher.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("No active session. Please sign in again.");
+      const { data, error } = await supabase.functions.invoke("set-teacher-role", {
+        body: { profile_id: teacher.id, role },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(
+        role === "owner"
+          ? `${teacher.full_name} is now a co-owner`
+          : `${teacher.full_name} is now a teacher`
+      );
+      fetchData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setActingId(null);
     }
   };
 
@@ -118,6 +178,9 @@ export default function ManageTeachers({ schoolId }: Props) {
     }
   };
 
+  const isExpired = (inv: Invite) =>
+    !inv.accepted_at && new Date(inv.expires_at).getTime() < Date.now();
+
   return (
     <div className="space-y-6">
       {/* Invite */}
@@ -125,7 +188,7 @@ export default function ManageTeachers({ schoolId }: Props) {
         <CardContent className="p-6 space-y-6">
           <div className="flex items-center gap-2 text-foreground">
             <UserPlus className="w-4 h-4" />
-            <h2 className="text-sm font-medium uppercase tracking-[0.15em]">Invite a Teacher</h2>
+            <h2 className="text-sm font-medium uppercase tracking-[0.15em]">Invite a Teacher or Co-owner</h2>
           </div>
           <form onSubmit={handleInvite} className="space-y-5">
             <div>
@@ -135,6 +198,36 @@ export default function ManageTeachers({ schoolId }: Props) {
             <div>
               <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">Email</label>
               <Input type="email" value={teacherEmail} onChange={(e) => setTeacherEmail(e.target.value)} placeholder="teacher@school.com" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground font-medium block mb-2">Role</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInviteRole("teacher")}
+                  className={`text-xs py-2 px-3 rounded-md border transition ${
+                    inviteRole === "teacher"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Teacher
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInviteRole("owner")}
+                  className={`text-xs py-2 px-3 rounded-md border transition ${
+                    inviteRole === "owner"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Co-owner
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Co-owners get full access including dashboard and settings.
+              </p>
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Sending…" : "Send Invite"}
@@ -149,7 +242,7 @@ export default function ManageTeachers({ schoolId }: Props) {
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center gap-2 text-foreground">
               <Users className="w-4 h-4" />
-              <h2 className="text-sm font-medium uppercase tracking-[0.15em]">Teachers</h2>
+              <h2 className="text-sm font-medium uppercase tracking-[0.15em]">Team</h2>
             </div>
             <div className="space-y-3">
               {teachers.map((t) => (
@@ -158,9 +251,56 @@ export default function ManageTeachers({ schoolId }: Props) {
                     <span className="text-xs font-medium text-accent">{t.full_name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{t.full_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-foreground truncate">{t.full_name}</p>
+                      {t.isOwner && (
+                        <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.2em] text-accent">
+                          <ShieldCheck className="w-3 h-3" /> Co-owner
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground truncate">{t.email}</p>
                   </div>
+
+                  {/* Promote / Demote */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                        title={t.isOwner ? "Demote to teacher" : "Promote to co-owner"}
+                        disabled={actingId === t.id}
+                      >
+                        {t.isOwner ? (
+                          <ArrowDownCircle className="w-4 h-4" />
+                        ) : (
+                          <ArrowUpCircle className="w-4 h-4" />
+                        )}
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {t.isOwner
+                            ? `Demote ${t.full_name} to teacher?`
+                            : `Promote ${t.full_name} to co-owner?`}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t.isOwner
+                            ? "They will lose access to owner-only features like the dashboard and settings."
+                            : "They will get full owner access including dashboard, settings, and all owner features."}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleSetRole(t, t.isOwner ? "teacher" : "owner")}
+                        >
+                          {t.isOwner ? "Demote" : "Promote"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button className="p-2 text-muted-foreground hover:text-destructive transition-colors">
@@ -197,11 +337,18 @@ export default function ManageTeachers({ schoolId }: Props) {
               {invites.map((inv) => (
                 <div key={inv.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{inv.full_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-foreground truncate">{inv.full_name}</p>
+                      {inv.role === "owner" && (
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-accent">Co-owner</span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground truncate">{inv.email}</p>
                   </div>
                   {inv.accepted_at ? (
                     <span className="flex items-center gap-1 text-[10px] text-accent"><CheckCircle2 className="w-3 h-3" /> Accepted</span>
+                  ) : isExpired(inv) ? (
+                    <span className="flex items-center gap-1 text-[10px] text-destructive"><Clock className="w-3 h-3" /> Expired</span>
                   ) : (
                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><Clock className="w-3 h-3" /> Pending</span>
                   )}

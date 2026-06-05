@@ -20,6 +20,7 @@ import TeacherStudents from "./pages/TeacherStudents";
 import TeacherNotes from "./pages/TeacherNotes";
 import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
+import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 import ParentNote from "./pages/ParentNote";
 import OwnerClasses from "./pages/OwnerClasses";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/accept-invite" element={<AcceptInvite />} />
             <Route path="/dpa" element={<DataProcessingAgreement />} />
             <Route path="/parent-note" element={<ParentNote />} />
             <Route path="*" element={<NotFound />} />
