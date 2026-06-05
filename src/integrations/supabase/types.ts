@@ -483,27 +483,36 @@ export type Database = {
           accepted_at: string | null
           created_at: string
           email: string
+          expires_at: string
           full_name: string
           id: string
+          invite_token: string
           invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
           school_id: string
         }
         Insert: {
           accepted_at?: string | null
           created_at?: string
           email: string
+          expires_at?: string
           full_name: string
           id?: string
+          invite_token?: string
           invited_by: string
+          role?: Database["public"]["Enums"]["app_role"]
           school_id: string
         }
         Update: {
           accepted_at?: string | null
           created_at?: string
           email?: string
+          expires_at?: string
           full_name?: string
           id?: string
+          invite_token?: string
           invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
           school_id?: string
         }
         Relationships: []
