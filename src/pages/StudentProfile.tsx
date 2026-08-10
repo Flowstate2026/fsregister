@@ -30,12 +30,67 @@ const StudentProfile = () => {
   const queryClient = useQueryClient();
   const [noteText, setNoteText] = useState("");
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [classPickerOpen, setClassPickerOpen] = useState(false);
 
   // Fetch student with all related data
   const { data: studentData, isLoading } = useStudent(studentId, {
     includeEnrollments: true,
     includeNoteAuthors: true,
   });
+
+  const { data: schoolClasses = [] } = useQuery({
+    queryKey: ["school-classes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("classes")
+        .select("id, name, day_of_week, time_of_day")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const enrolledClassIds = new Set(
+    (studentData?.enrollments ?? []).map((e) => e.class_id)
+  );
+  const availableClasses = schoolClasses.filter((c) => !enrolledClassIds.has(c.id));
+
+  const invalidateStudent = () => {
+    queryClient.invalidateQueries({ queryKey: ["student", studentId] });
+    queryClient.invalidateQueries({ queryKey: ["class-students"] });
+  };
+
+  const addClassMutation = useMutation({
+    mutationFn: async (classId: string) => {
+      if (!studentId) throw new Error("No student");
+      const { error } = await supabase
+        .from("class_enrollments")
+        .insert({ student_id: studentId, class_id: classId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setClassPickerOpen(false);
+      invalidateStudent();
+      toast.success("Class added");
+    },
+    onError: (err) => toast.error("Failed to add class: " + (err as Error).message),
+  });
+
+  const removeClassMutation = useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const { error } = await supabase
+        .from("class_enrollments")
+        .delete()
+        .eq("id", enrollmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateStudent();
+      toast.success("Class removed");
+    },
+    onError: (err) => toast.error("Failed to remove class: " + (err as Error).message),
+  });
+
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
