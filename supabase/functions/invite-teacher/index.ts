@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://fsregister.lovable.app";
+// Single source of truth for how long an invite link stays valid.
+const INVITE_TTL_DAYS = 7;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
