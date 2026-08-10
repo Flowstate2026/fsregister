@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,10 +8,20 @@ import AppLayout from "@/components/AppLayout";
 import StudentIndicators from "@/components/StudentIndicators";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { calculateAttendancePercentage, getDayName, formatTime } from "@/lib/student-utils";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Plus, Check, X, Archive, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+
 
 const StudentProfile = () => {
   const { studentId } = useParams<{ studentId: string }>();
