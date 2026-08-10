@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
                 <a href="${acceptUrl}" style="display:inline-block;background:#C4704B;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Accept invitation</a>
               </p>
               <p style="font-size:12px;color:#7d7d7d;line-height:1.5;margin:24px 0 0;">
-                This invitation expires in 7 days. If you didn't expect this email, you can safely ignore it.
+                This invitation expires in ${INVITE_TTL_DAYS} days (on ${new Date(expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}). If you didn't expect this email, you can safely ignore it.
               </p>
               <p style="font-size:11px;color:#a0a0a0;word-break:break-all;margin:16px 0 0;">
                 Or paste this link into your browser: ${acceptUrl}
