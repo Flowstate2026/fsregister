@@ -220,29 +220,79 @@ const StudentProfile = () => {
 
         {/* Enrolled classes */}
         <section className="mb-12">
-          <h3
-            className="mb-5 text-[10px] font-medium uppercase tracking-[0.35em] text-muted-foreground"
-            style={{
-              fontFamily: "Jost, system-ui, sans-serif",
-              fontStyle: "normal",
-            }}
-          >
-            Enrolled Classes
-          </h3>
+          <div className="mb-5 flex items-center justify-between">
+            <h3
+              className="text-[10px] font-medium uppercase tracking-[0.35em] text-muted-foreground"
+              style={{
+                fontFamily: "Jost, system-ui, sans-serif",
+                fontStyle: "normal",
+              }}
+            >
+              Enrolled Classes
+            </h3>
+            <Popover open={classPickerOpen} onOpenChange={setClassPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-foreground text-[10px] uppercase tracking-[0.15em]"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Class
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-0" align="end">
+                <Command>
+                  <CommandInput placeholder="Search classes…" />
+                  <CommandList>
+                    <CommandEmpty>No classes available.</CommandEmpty>
+                    <CommandGroup>
+                      {availableClasses.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          disabled={addClassMutation.isPending}
+                          onSelect={() => addClassMutation.mutate(c.id)}
+                        >
+                          <span className="font-light">{c.name}</span>
+                          <span className="ml-2 text-[11px] text-muted-foreground">
+                            {getDayName(c.day_of_week)} · {formatTime(c.time_of_day)}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="divide-y divide-border/40">
             {studentData.enrollments?.map((e) => (
-              <div key={e.id} className="bg-card px-5 py-4 text-sm font-light">
-                <span className="text-foreground">
-                  {e.classes?.name || "Unknown Class"}
-                </span>
-                {e.classes && (
-                  <span className="ml-3 text-[11px] text-muted-foreground">
-                    {getDayName(e.classes.day_of_week)} ·{" "}
-                    {formatTime(e.classes.time_of_day)}
+              <div
+                key={e.id}
+                className="flex items-center justify-between bg-card px-5 py-4 text-sm font-light"
+              >
+                <div>
+                  <span className="text-foreground">
+                    {e.classes?.name || "Unknown Class"}
                   </span>
-                )}
+                  {e.classes && (
+                    <span className="ml-3 text-[11px] text-muted-foreground">
+                      {getDayName(e.classes.day_of_week)} ·{" "}
+                      {formatTime(e.classes.time_of_day)}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => removeClassMutation.mutate(e.id)}
+                  disabled={removeClassMutation.isPending}
+                  aria-label="Remove class"
+                  className="text-muted-foreground hover:text-risk transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
+
             {!studentData.enrollments?.length && (
               <p className="text-[11px] font-light text-muted-foreground py-4">
                 No class enrollments
