@@ -190,6 +190,11 @@ const StudentProfile = () => {
                 Parent: {studentData.parent_email}
               </p>
             )}
+            {studentData.parent_phone && (
+              <p className="mt-1 text-[11px] font-light text-muted-foreground">
+                Parent phone: {studentData.parent_phone}
+              </p>
+            )}
             {isOwner && (
               <button
                 onClick={() => archiveMutation.mutate()}
