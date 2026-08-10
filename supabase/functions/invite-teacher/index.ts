@@ -115,7 +115,9 @@ Deno.serve(async (req) => {
       .eq("email", email)
       .is("accepted_at", null);
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { data: inviteRow, error: inviteError } = await adminClient
       .from("teacher_invites")
