@@ -146,11 +146,49 @@ Deno.serve(async (req) => {
     if (resendKey) {
       const { data: school } = await adminClient
         .from("schools")
-        .select("name")
+        .select("name, logo_url")
         .eq("id", schoolId)
         .maybeSingle();
       const schoolName = school?.name || "your school";
       const roleLabel = role === "owner" ? "co-owner" : "teacher";
+      const firstName = full_name.split(" ")[0] || "there";
+      const expiryDate = new Date(expiresAt).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      const emailHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#faf8f5;font-family:'DM Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
+        ${school?.logo_url ? `<tr><td style="padding:32px 40px 0;text-align:center;"><img src="${school.logo_url}" alt="${schoolName}" style="max-height:60px;max-width:200px;" /></td></tr>` : ""}
+        <tr><td style="padding:32px 40px 0;">
+          <h1 style="margin:0 0 8px;font-size:20px;color:#3d2e1f;font-weight:500;">You've been invited to ${schoolName}</h1>
+          <p style="margin:0 0 24px;font-size:13px;color:#8a7b6b;">Join as a ${roleLabel} on FS Register</p>
+        </td></tr>
+        <tr><td style="padding:0 40px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#3d2e1f;line-height:1.6;">Hi ${firstName},</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#3d2e1f;line-height:1.6;">
+            Welcome aboard! You've been invited to join <strong>${schoolName}</strong> as a ${roleLabel} on FS Register — where you'll take registers, track attendance and keep notes on your students. Tap the button below to set your password and get started.
+          </p>
+        </td></tr>
+        <tr><td style="padding:0 40px 32px;">
+          <a href="${acceptUrl}" style="display:inline-block;padding:12px 28px;background:#C4704B;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">Accept invitation</a>
+        </td></tr>
+        <tr><td style="padding:16px 40px 24px;border-top:1px solid #f0ebe4;">
+          <p style="margin:0 0 8px;font-size:11px;color:#b0a494;">This invitation expires in ${INVITE_TTL_DAYS} days (on ${expiryDate}). If you didn't expect this email, you can safely ignore it.</p>
+          <p style="margin:0;font-size:11px;color:#b0a494;word-break:break-all;">Or paste this link into your browser: ${acceptUrl}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -161,27 +199,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: "FS Register <onboarding@resend.dev>",
           to: [email],
-          subject: `You're invited to ${schoolName} on FS Register`,
-          html: `
-            <div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#2d2d2d;">
-              <h1 style="font-size:22px;margin:0 0 16px;">You've been invited</h1>
-              <p style="font-size:15px;line-height:1.5;margin:0 0 16px;">
-                Hi ${full_name.split(" ")[0] || ""},
-              </p>
-              <p style="font-size:15px;line-height:1.5;margin:0 0 24px;">
-                You've been invited to join <strong>${schoolName}</strong> as a ${roleLabel} on FS Register. Click below to set your password and get started.
-              </p>
-              <p style="margin:0 0 24px;">
-                <a href="${acceptUrl}" style="display:inline-block;background:#C4704B;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Accept invitation</a>
-              </p>
-              <p style="font-size:12px;color:#7d7d7d;line-height:1.5;margin:24px 0 0;">
-                This invitation expires in ${INVITE_TTL_DAYS} days (on ${new Date(expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}). If you didn't expect this email, you can safely ignore it.
-              </p>
-              <p style="font-size:11px;color:#a0a0a0;word-break:break-all;margin:16px 0 0;">
-                Or paste this link into your browser: ${acceptUrl}
-              </p>
-            </div>
-          `,
+          subject: `You've been invited to join ${schoolName} on FS Register`,
+          html: emailHtml,
         }),
       });
       if (res.ok) {
@@ -190,6 +209,7 @@ Deno.serve(async (req) => {
         console.error("Resend error:", await res.text());
       }
     }
+
 
     return new Response(
       JSON.stringify({ success: true, email_sent: emailSent, accept_url: acceptUrl }),
