@@ -91,26 +91,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const schoolName = school?.name || "your school";
 
-    // If user already exists, check if they're already in this school
+    // If the user already exists we still send a fresh invite link. The accept-invite
+    // function updates their password and re-links their profile/role, so this doubles
+    // as a safe "resend invitation" for existing staff.
     const { data: existingUsers } = await adminClient.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(
       (u) => u.email?.toLowerCase() === email
     );
 
-    if (existingUser) {
-      const { data: existingProfile } = await adminClient
-        .from("profiles")
-        .select("id")
-        .eq("user_id", existingUser.id)
-        .eq("school_id", schoolId)
-        .maybeSingle();
-      if (existingProfile) {
-        return new Response(
-          JSON.stringify({ error: "This user is already part of your school" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
 
     // Remove any prior pending invite for the same email/school
     await adminClient
