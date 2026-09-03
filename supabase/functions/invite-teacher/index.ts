@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildFrom } from "../_shared/sender.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,6 +84,13 @@ Deno.serve(async (req) => {
 
     const schoolId = callerProfile.school_id;
 
+    const { data: school } = await adminClient
+      .from("schools")
+      .select("name, logo_url")
+      .eq("id", schoolId)
+      .maybeSingle();
+    const schoolName = school?.name || "your school";
+
     // If user already exists, check if they're already in this school
     const { data: existingUsers } = await adminClient.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(
@@ -138,11 +146,12 @@ Deno.serve(async (req) => {
         },
       });
     } else {
-      // Send the invitation through Lovable's built-in auth email system.
-      // This creates the user and delivers a branded invite email via the default auth sender.
-      const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(
+      // Create the user and generate the invite link, then send the email ourselves so the
+      // sender name is always the school name (never anyone's personal email address).
+      const { data: linkData, error: createError } = await adminClient.auth.admin.generateLink({
+        type: "invite",
         email,
-        {
+        options: {
           data: {
             full_name: full_name,
             school_id: schoolId,
@@ -150,16 +159,65 @@ Deno.serve(async (req) => {
             password_set: false,
           },
           redirectTo: `${APP_URL}/reset-password`,
-        }
-      );
+        },
+      });
 
-      if (createError) {
+      if (createError || !linkData?.user) {
         return new Response(
-          JSON.stringify({ error: `Failed to invite user: ${createError.message}` }),
+          JSON.stringify({ error: `Failed to invite user: ${createError?.message ?? "unknown error"}` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      teacherUserId = newUser.user.id;
+      teacherUserId = linkData.user.id;
+
+      const inviteLink = linkData.properties.action_link;
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+      if (resendApiKey) {
+        const inviteHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#faf8f5;font-family:'DM Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
+        ${school?.logo_url ? `<tr><td style="padding:32px 40px 0;text-align:center;"><img src="${school.logo_url}" alt="${schoolName}" style="max-height:60px;max-width:200px;" /></td></tr>` : ""}
+        <tr><td style="padding:32px 40px 0;">
+          <h1 style="margin:0 0 8px;font-size:20px;color:#3d2e1f;font-weight:500;">Welcome to ${schoolName}</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#3d2e1f;line-height:1.6;">Hi ${full_name}, you've been invited to join ${schoolName} on FS Register. Set your password to get started with class registers, notes and attendance.</p>
+        </td></tr>
+        <tr><td style="padding:0 40px 32px;">
+          <a href="${inviteLink}" style="display:inline-block;padding:12px 28px;background:#C4704B;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">Accept invitation</a>
+        </td></tr>
+        <tr><td style="padding:16px 40px 24px;border-top:1px solid #f0ebe4;">
+          <p style="margin:0;font-size:11px;color:#b0a494;">This invitation expires in 7 days. Sent from ${schoolName}.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+        const emailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: buildFrom(school?.name),
+            to: [email],
+            subject: `You've been invited to join ${schoolName} on FS Register`,
+            html: inviteHtml,
+          }),
+        });
+
+        if (!emailRes.ok) {
+          const errBody = await emailRes.text();
+          console.error(`Invite email failed [${emailRes.status}]: ${errBody}`);
+        }
+      }
     }
 
     // Save a record of the invite for the Manage Teachers list
