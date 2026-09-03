@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildFrom } from "../_shared/sender.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -120,7 +121,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "FS Register <onboarding@resend.dev>",
+            from: buildFrom(school?.name),
             to: [authorProfile.email],
             subject: `Parent reply about ${studentName}`,
             html: emailHtml,
