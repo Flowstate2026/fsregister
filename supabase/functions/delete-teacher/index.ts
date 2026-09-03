@@ -53,20 +53,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { profile_id } = await req.json();
-    if (!profile_id) {
+    const { profile_id, user_id } = await req.json();
+    if (!profile_id && !user_id) {
       return new Response(
-        JSON.stringify({ error: "profile_id is required" }),
+        JSON.stringify({ error: "profile_id or user_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get the teacher's user_id and school_id from profiles
-    const { data: teacherProfile } = await adminClient
-      .from("profiles")
-      .select("user_id, school_id")
-      .eq("id", profile_id)
-      .single();
+    // Get the teacher's user_id and school_id from profiles (by profile id or user id)
+    let teacherProfile: { user_id: string; school_id: string } | null = null;
+    if (profile_id) {
+      const { data } = await adminClient
+        .from("profiles")
+        .select("user_id, school_id")
+        .eq("id", profile_id)
+        .maybeSingle();
+      teacherProfile = data as typeof teacherProfile;
+    }
+    if (!teacherProfile && user_id) {
+      const { data } = await adminClient
+        .from("profiles")
+        .select("user_id, school_id")
+        .eq("user_id", user_id)
+        .maybeSingle();
+      teacherProfile = data as typeof teacherProfile;
+    }
+    // Fall back to user_roles if the profile row is already gone
+    if (!teacherProfile && user_id) {
+      const { data } = await adminClient
+        .from("user_roles")
+        .select("user_id, school_id")
+        .eq("user_id", user_id)
+        .maybeSingle();
+      teacherProfile = data as typeof teacherProfile;
+    }
 
     if (!teacherProfile) {
       return new Response(
