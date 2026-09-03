@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "FS Register <onboarding@resend.dev>",
+        from: `${senderName} <noreply@flowstatesuite.co.uk>`,
         to: [student.parent_email],
         subject: `A note about ${student.first_name} from ${schoolName}`,
         html: emailHtml,
