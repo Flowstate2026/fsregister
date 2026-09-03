@@ -128,7 +128,7 @@ export default function ManageTeachers({ schoolId }: Props) {
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) throw new Error("No active session. Please sign in again.");
       const { data, error } = await supabase.functions.invoke("delete-teacher", {
-        body: { profile_id: teacher.id },
+        body: { profile_id: teacher.id, user_id: teacher.user_id },
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (error) throw error;
