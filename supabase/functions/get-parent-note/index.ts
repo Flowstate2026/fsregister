@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sanitiseSenderName } from "../_shared/sender.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,7 +114,8 @@ Deno.serve(async (req) => {
           logoUrl: school?.logo_url || null,
         },
         teacher: {
-          name: author?.full_name || "Teacher",
+          // GDPR: never expose a staff email address to parents
+          name: sanitiseSenderName(author?.full_name) || "Teacher",
         },
         className: (enrollment?.classes as any)?.name || "",
         replies: replies || [],
