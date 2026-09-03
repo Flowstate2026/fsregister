@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
 
     // Delete user_roles, profile, and auth user
     await adminClient.from("user_roles").delete().eq("user_id", teacherUserId);
-    await adminClient.from("profiles").delete().eq("id", profile_id);
+    await adminClient.from("profiles").delete().eq("user_id", teacherUserId);
     
     // Unassign from any classes
     await adminClient.from("classes").update({ teacher_id: null }).eq("teacher_id", teacherUserId);
