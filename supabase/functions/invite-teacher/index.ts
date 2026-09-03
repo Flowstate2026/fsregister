@@ -120,61 +120,44 @@ Deno.serve(async (req) => {
       .eq("email", email)
       .is("accepted_at", null);
 
-    let teacherUserId: string;
+    const inviteToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const inviteLink = `${APP_URL}/accept-invite?token=${encodeURIComponent(inviteToken)}`;
 
-    if (existingUser) {
-      teacherUserId = existingUser.id;
-      // Add profile and role for existing user to this school
-      await adminClient.from("profiles").insert({
-        user_id: teacherUserId,
-        full_name: full_name,
-        email: email,
+    // Store the same custom token that is sent in the email. Unlike an auth action link,
+    // this token remains valid for the full seven-day period recorded in the database.
+    const { data: savedInvite, error: saveInviteError } = await adminClient
+      .from("teacher_invites")
+      .insert({
         school_id: schoolId,
-      });
-      await adminClient.from("user_roles").insert({
-        user_id: teacherUserId,
-        role: role,
-        school_id: schoolId,
-      });
-      // Keep metadata in sync so the app recognises their school/role
-      await adminClient.auth.admin.updateUserById(teacherUserId, {
-        user_metadata: {
-          full_name: full_name,
-          school_id: schoolId,
-          role: role,
-          password_set: true,
-        },
-      });
-    } else {
-      // Create the user and generate the invite link, then send the email ourselves so the
-      // sender name is always the school name (never anyone's personal email address).
-      const { data: linkData, error: createError } = await adminClient.auth.admin.generateLink({
-        type: "invite",
         email,
-        options: {
-          data: {
-            full_name: full_name,
-            school_id: schoolId,
-            role: role,
-            password_set: false,
-          },
-          redirectTo: `${APP_URL}/reset-password`,
-        },
+        full_name,
+        invited_by: caller.id,
+        role,
+        invite_token: inviteToken,
+        expires_at: expiresAt,
+        accepted_at: null,
+      })
+      .select("id")
+      .single();
+
+    if (saveInviteError || !savedInvite) {
+      return new Response(
+        JSON.stringify({ error: `Failed to create invite: ${saveInviteError?.message ?? "unknown error"}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      await adminClient.from("teacher_invites").delete().eq("id", savedInvite.id);
+      return new Response(JSON.stringify({ error: "Email service is not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
 
-      if (createError || !linkData?.user) {
-        return new Response(
-          JSON.stringify({ error: `Failed to invite user: ${createError?.message ?? "unknown error"}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      teacherUserId = linkData.user.id;
-
-      const inviteLink = linkData.properties.action_link;
-      const resendApiKey = Deno.env.get("RESEND_API_KEY");
-
-      if (resendApiKey) {
-        const inviteHtml = `
+    const inviteHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"></head>
@@ -199,39 +182,32 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: buildFrom(school?.name),
-            to: [email],
-            subject: `You've been invited to join ${schoolName} on FS Register`,
-            html: inviteHtml,
-          }),
-        });
-
-        if (!emailRes.ok) {
-          const errBody = await emailRes.text();
-          console.error(`Invite email failed [${emailRes.status}]: ${errBody}`);
-        }
-      }
-    }
-
-    // Save a record of the invite for the Manage Teachers list
-    await adminClient.from("teacher_invites").insert({
-      school_id: schoolId,
-      email: email,
-      full_name: full_name,
-      invited_by: caller.id,
-      role: role,
-      accepted_at: existingUser ? new Date().toISOString() : null,
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: buildFrom(school?.name),
+        to: [email],
+        subject: `You've been invited to join ${schoolName} on FS Register`,
+        html: inviteHtml,
+      }),
     });
 
+    if (!emailRes.ok) {
+      const errBody = await emailRes.text();
+      console.error(`Invite email failed [${emailRes.status}]: ${errBody}`);
+      await adminClient.from("teacher_invites").delete().eq("id", savedInvite.id);
+      return new Response(
+        JSON.stringify({ error: "Failed to send invitation email", details: errBody }),
+        { status: emailRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ success: true, teacher_user_id: teacherUserId }),
+      JSON.stringify({ success: true, teacher_user_id: existingUser?.id ?? null }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
