@@ -97,8 +97,11 @@ Deno.serve(async (req) => {
     // Never show a personal email address as the teacher name in the email body.
     const teacherName = sanitiseSenderName(authorProfile?.full_name) || "Their teacher";
     const schoolName = school?.name || "School";
-    // Sender name is always the school name — never a personal email or profile name.
-    const fromHeader = buildFrom(school?.name);
+    // Sender shows the teacher's name (with the school for context) — never an email address.
+    const senderLabel = authorProfile?.full_name
+      ? `${teacherName} at ${schoolName}`
+      : schoolName;
+    const fromHeader = buildFrom(senderLabel);
 
     // Create a token for parent access
     const { data: tokenRow, error: tokenError } = await admin
