@@ -95,6 +95,8 @@ Deno.serve(async (req) => {
     const className = (enrollment?.classes as any)?.name || "their class";
     const teacherName = authorProfile?.full_name || "Their teacher";
     const schoolName = school?.name || "School";
+    // Sender name is always the school name — never a personal email or profile name.
+    const senderName = sanitiseSenderName(school?.name) || "FS Register";
 
     // Create a token for parent access
     const { data: tokenRow, error: tokenError } = await admin
