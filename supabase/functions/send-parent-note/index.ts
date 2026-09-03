@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildFrom, sanitiseSenderName } from "../_shared/sender.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
     const teacherName = authorProfile?.full_name || "Their teacher";
     const schoolName = school?.name || "School";
     // Sender name is always the school name — never a personal email or profile name.
-    const senderName = sanitiseSenderName(school?.name) || "FS Register";
+    const fromHeader = buildFrom(school?.name);
 
     // Create a token for parent access
     const { data: tokenRow, error: tokenError } = await admin
@@ -167,7 +168,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${senderName} <noreply@flowstatesuite.co.uk>`,
+        from: fromHeader,
         to: [student.parent_email],
         subject: `A note about ${student.first_name} from ${schoolName}`,
         html: emailHtml,
