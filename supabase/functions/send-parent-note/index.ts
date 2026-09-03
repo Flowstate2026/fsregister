@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildFrom } from "../_shared/sender.ts";
+import { buildFrom, sanitiseSenderName } from "../_shared/sender.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
       .single();
 
     const className = (enrollment?.classes as any)?.name || "their class";
-    const teacherName = authorProfile?.full_name || "Their teacher";
+    // Never show a personal email address as the teacher name in the email body.
+    const teacherName = sanitiseSenderName(authorProfile?.full_name) || "Their teacher";
     const schoolName = school?.name || "School";
     // Sender name is always the school name — never a personal email or profile name.
     const fromHeader = buildFrom(school?.name);
