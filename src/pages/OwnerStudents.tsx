@@ -45,10 +45,23 @@ const OwnerStudents = () => {
         .order("last_name");
       if (!studentList?.length) return [];
 
-      const studentIds = studentList.map((s) => s.id);
-      const [{ data: attendance }, { data: notes }] = await Promise.all([
-        supabase.from("attendance_records").select("*").in("student_id", studentIds),
-        supabase.from("student_notes").select("*").in("student_id", studentIds),
+      // Paginate without long id lists (they overflow URL limits for big schools)
+      const fetchAll = async <T,>(
+        build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+      ) => {
+        const rows: T[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await build(from, from + 999);
+          if (error) throw error;
+          if (!data?.length) break;
+          rows.push(...data);
+          if (data.length < 1000) break;
+        }
+        return rows;
+      };
+      const [attendance, notes] = await Promise.all([
+        fetchAll((f, t) => supabase.from("attendance_records").select("*").order("id").range(f, t)),
+        fetchAll((f, t) => supabase.from("student_notes").select("*").order("id").range(f, t)),
       ]);
 
       return studentList.map((student) => ({

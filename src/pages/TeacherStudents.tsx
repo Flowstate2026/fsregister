@@ -22,44 +22,44 @@ const TeacherStudents = () => {
   const { data: students, isLoading } = useQuery({
     queryKey: ["teacher-students", user?.id],
     queryFn: async () => {
-      // Teachers see all classes in their school (RLS scopes by school_id)
-      const { data: classes } = await supabase
-        .from("classes")
-        .select("id");
-      if (!classes?.length) return [];
+      // Every active student in the school (RLS scopes by school_id).
+      // Paginate and avoid huge `.in()` id lists, which overflow URL limits.
+      const fetchAll = async <T,>(
+        build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+      ) => {
+        const rows: T[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await build(from, from + 999);
+          if (error) throw error;
+          if (!data?.length) break;
+          rows.push(...data);
+          if (data.length < 1000) break;
+        }
+        return rows;
+      };
 
-      const classIds = classes.map((c) => c.id);
+      const studentList = await fetchAll((f, t) =>
+        supabase.from("students").select("*").eq("archived", false).order("last_name").order("id").range(f, t)
+      );
+      if (!studentList.length) return [];
 
-      // Get enrolled students
-      const { data: enrollments } = await supabase
-        .from("class_enrollments")
-        .select("student_id")
-        .in("class_id", classIds);
-      if (!enrollments?.length) return [];
+      const [attendance, notes] = await Promise.all([
+        fetchAll((f, t) => supabase.from("attendance_records").select("*").order("id").range(f, t)),
+        fetchAll((f, t) => supabase.from("student_notes").select("*").order("id").range(f, t)),
+      ]);
 
-      const studentIds = [...new Set(enrollments.map((e) => e.student_id))];
-
-      const { data: studentList } = await supabase
-        .from("students")
-        .select("*")
-        .in("id", studentIds)
-        .eq("archived", false)
-        .order("last_name");
-      if (!studentList?.length) return [];
-
-      const { data: attendance } = await supabase
-        .from("attendance_records")
-        .select("*")
-        .in("student_id", studentIds);
-      const { data: notes } = await supabase
-        .from("student_notes")
-        .select("*")
-        .in("student_id", studentIds);
+      const byStudent = <R extends { student_id: string }>(list: R[]) => {
+        const m = new Map<string, R[]>();
+        for (const r of list) (m.get(r.student_id) ?? m.set(r.student_id, []).get(r.student_id)!).push(r);
+        return m;
+      };
+      const attBy = byStudent(attendance);
+      const notesBy = byStudent(notes);
 
       return studentList.map((student) => ({
         ...student,
-        attendance: attendance?.filter((a) => a.student_id === student.id) || [],
-        notes: notes?.filter((n) => n.student_id === student.id) || [],
+        attendance: attBy.get(student.id) || [],
+        notes: notesBy.get(student.id) || [],
       }));
     },
     enabled: !!user,
