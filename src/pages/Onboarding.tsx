@@ -179,39 +179,14 @@ export default function Onboarding() {
   };
 
   const downloadTemplate = useCallback(() => {
-    const csv = "first_name,last_name,date_of_birth,join_date,class_name,parent_email\nEmma,Smith,12/03/2015,10/01/2025,Junior Ballet,parent@example.com\nLily,Jones,28/09/2012,10/01/2025,\"Jazz Technique, Acro 3, Performance Team\",parent2@example.com\n";
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "student_import_template.csv"; a.click();
-    URL.revokeObjectURL(url);
+    downloadStudentTemplate();
   }, []);
 
-  const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setCsvFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const rows = parseCsvText(text);
-      if (rows.length < 2) { setCsvStudents([]); return; }
-      const headers = rows[0].map((h) => h.toLowerCase());
-      const students = rows.slice(1).map((parts) => {
-        const row: Record<string, string> = {};
-        headers.forEach((h, i) => { row[h] = parts[i] || ""; });
-        return {
-          first_name: row["first_name"] || "",
-          last_name: row["last_name"] || "",
-          date_of_birth: parseCsvDate(row["date_of_birth"]),
-          join_date: parseCsvDate(row["join_date"]),
-          class_name: row["class_name"] || undefined,
-          parent_email: row["parent_email"] || undefined,
-        };
-      }).filter((s) => s.first_name);
-      setCsvStudents(students);
-    };
-    reader.readAsText(file);
+    setCsvStudents(await readStudentsCsvFile(file));
   };
 
   const handleStep4 = async () => {
@@ -219,50 +194,13 @@ export default function Onboarding() {
     if (csvStudents.length === 0) { setStep(5); return; }
     setLoading(true);
     try {
-      // Parse comma-separated class names per student
-      const studentClasses: string[][] = csvStudents.map((s) => splitClassNames(s.class_name));
+      const studentClasses = parseStudentClasses(csvStudents);
+      const classMap = await resolveClassMap(schoolId, [...new Set(studentClasses.flat())]);
 
-      // Collect unique class names and ensure they exist
-      const classNames = [...new Set(studentClasses.flat())];
-      const classMap: Record<string, string> = {};
-
-      if (classNames.length > 0) {
-        const { data: existing } = await supabase
-          .from("classes")
-          .select("id, name")
-          .eq("school_id", schoolId);
-
-        const existingMap: Record<string, string> = {};
-        (existing || []).forEach((c) => { existingMap[c.name.toLowerCase()] = c.id; });
-
-        for (const cn of classNames) {
-          const key = cn.toLowerCase();
-          if (existingMap[key]) {
-            classMap[key] = existingMap[key];
-          } else {
-            const { data: newClass, error } = await supabase
-              .from("classes")
-              .insert({ school_id: schoolId, name: cn, day_of_week: 1, time_of_day: "10:00" })
-              .select("id")
-              .single();
-            if (error) throw error;
-            classMap[key] = newClass.id;
-            existingMap[key] = newClass.id;
-          }
-        }
-      }
-
-      // Insert students
-      const rows = csvStudents.map((s) => ({
-        school_id: schoolId,
-        first_name: s.first_name,
-        last_name: s.last_name,
-        bulk_imported: true,
-        ...(s.date_of_birth ? { date_of_birth: s.date_of_birth } : {}),
-        ...(s.join_date ? { join_date: s.join_date } : {}),
-        ...(s.parent_email ? { parent_email: s.parent_email } : {}),
-      }));
-      const { data: inserted, error } = await supabase.from("students").insert(rows).select("id, first_name, last_name");
+      const { data: inserted, error } = await supabase
+        .from("students")
+        .insert(buildStudentInsertRows(schoolId, csvStudents))
+        .select("id, first_name, last_name");
       if (error) throw error;
 
       // Create class enrollments (one per student/class pair)
@@ -282,7 +220,6 @@ export default function Onboarding() {
           if (enrollErr) console.error("Enrollment error:", enrollErr);
         }
       }
-
 
       toast.success(`${csvStudents.length} students added`);
       setStep(5);
