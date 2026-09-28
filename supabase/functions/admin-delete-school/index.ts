@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { deleteSchoolData } from "../_shared/delete-school-data.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,47 +29,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Fetch students for this school
-    const { data: students } = await admin
-      .from("students")
-      .select("id")
-      .eq("school_id", school_id);
-    const studentIds = (students ?? []).map((s) => s.id);
-
-    // Fetch student_notes for note_tokens / parent_replies cleanup
-    let noteIds: string[] = [];
-    if (studentIds.length > 0) {
-      const { data: notes } = await admin
-        .from("student_notes")
-        .select("id")
-        .in("student_id", studentIds);
-      noteIds = (notes ?? []).map((n) => n.id);
-    }
-
-    if (noteIds.length > 0) {
-      await admin.from("parent_replies").delete().in("note_id", noteIds);
-      await admin.from("note_tokens").delete().in("note_id", noteIds);
-    }
-
-    if (studentIds.length > 0) {
-      await admin.from("attendance_records").delete().in("student_id", studentIds);
-      await admin.from("student_notes").delete().in("student_id", studentIds);
-      await admin.from("class_enrollments").delete().in("student_id", studentIds);
-    }
-
-    await admin.from("students").delete().eq("school_id", school_id);
-    await admin.from("cancelled_dates").delete().eq("school_id", school_id);
-    await admin.from("classes").delete().eq("school_id", school_id);
-    await admin.from("school_webhooks").delete().eq("school_id", school_id);
-    await admin.from("teacher_invites").delete().eq("school_id", school_id);
-    await admin.from("gdpr_consent_records").delete().eq("school_id", school_id);
-
-    // Remove user_roles + profiles for this school (auth users intentionally kept)
-    await admin.from("user_roles").delete().eq("school_id", school_id);
-    await admin.from("profiles").delete().eq("school_id", school_id);
-
-    const { error: schoolErr } = await admin.from("schools").delete().eq("id", school_id);
-    if (schoolErr) throw schoolErr;
+    // Auth users intentionally kept for admin deletion
+    await deleteSchoolData(admin, school_id);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
