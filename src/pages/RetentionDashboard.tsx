@@ -20,18 +20,19 @@ const RetentionDashboard = () => {
   // Enrich student data with computed metrics
   const enrichedStudents = students.map((s) => {
     const percent = calculateAttendancePercentage(s.attendance);
-    const classEnrollments = s.class_enrollments as any;
-    const className = classEnrollments?.[0]?.classes?.name || "—";
+    const className = s.class_enrollments?.[0]?.classes?.name || "—";
 
     return {
       ...s,
       percent,
-      isNew: isNewStudent(s.join_date) && !(s as any).bulk_imported,
+      isNew: isNewStudent(s.join_date) && !s.bulk_imported,
       needsNote: checkNeedsNote(s.notes),
       atRisk: isAtRisk(percent),
       className,
     };
   });
+
+  type EnrichedStudent = (typeof enrichedStudents)[number];
 
   // Organize into sections
   const newFamilies = enrichedStudents.filter((s) => s.isNew);
@@ -44,14 +45,14 @@ const RetentionDashboard = () => {
       icon: Star,
       iconClass: "text-gold",
       items: newFamilies,
-      metric: (s: any) => `Joined ${s.join_date}`,
+      metric: (s: EnrichedStudent) => `Joined ${s.join_date}`,
     },
     {
       title: "Low Attendance",
       icon: AlertTriangle,
       iconClass: "text-risk",
       items: atRiskStudents,
-      metric: (s: any) => `${s.percent}% attendance`,
+      metric: (s: EnrichedStudent) => `${s.percent}% attendance`,
     },
     {
       title: "Note Needed",
@@ -86,7 +87,7 @@ const RetentionDashboard = () => {
                   <p className="bg-card px-6 py-6 text-[11px] font-light text-muted-foreground shadow-[var(--shadow-card)]">No students in this category</p>
                 ) : (
                   <div className="divide-y divide-border/40">
-                    {section.items.map((student: any) => (
+                    {section.items.map((student: EnrichedStudent) => (
                       <button key={student.id} onClick={() => navigate(`/student/${student.id}`)}
                         className="flex w-full items-center justify-between bg-card px-6 py-5 text-left transition-all hover:bg-secondary/30 active:scale-[0.995]">
                         <div>
