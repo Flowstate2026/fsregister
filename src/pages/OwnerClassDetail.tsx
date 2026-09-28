@@ -17,7 +17,11 @@ import { getDayName, formatTime, calculateAttendancePercentage } from "@/lib/stu
 import type { Tables } from "@/integrations/supabase/types";
 import type { StudentWithDetails } from "@/hooks/useStudentWithDetails";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, CalendarDays, Pencil, Save, X, User } from "lucide-react";
+import { ArrowLeft, Clock, CalendarDays, Pencil, Save, X, User, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const DAYS = [
   { value: 0, label: "Sunday" },
@@ -62,6 +66,7 @@ const OwnerClassDetail = () => {
   const [students, setStudents] = useState<EnrolledStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
   const [editDay, setEditDay] = useState(1);
   const [editTime, setEditTime] = useState("");
   const [saving, setSaving] = useState(false);
@@ -86,6 +91,7 @@ const OwnerClassDetail = () => {
 
     if (classData) {
       setCls(classData);
+      setEditName(classData.name);
       setEditDay(classData.day_of_week);
       setEditTime(formatT(classData.time_of_day));
     }
@@ -117,14 +123,14 @@ const OwnerClassDetail = () => {
   }, [classId, schoolId]);
 
   const handleSave = async () => {
-    if (!cls || !editTime.trim()) {
-      toast.error("Please enter a time");
+    if (!cls || !editTime.trim() || !editName.trim()) {
+      toast.error("Please enter a name and time");
       return;
     }
     setSaving(true);
     const { error } = await supabase
       .from("classes")
-      .update({ day_of_week: editDay, time_of_day: editTime.trim() })
+      .update({ name: editName.trim(), day_of_week: editDay, time_of_day: editTime.trim() })
       .eq("id", cls.id)
       .eq("school_id", schoolId!);
     setSaving(false);
@@ -135,6 +141,17 @@ const OwnerClassDetail = () => {
     toast.success("Class updated");
     setEditing(false);
     fetchData();
+  };
+
+  const handleDelete = async () => {
+    if (!cls) return;
+    const { error } = await supabase.rpc("delete_class" as never, { _class_id: cls.id } as never);
+    if (error) {
+      toast.error("Failed to delete class");
+      return;
+    }
+    toast.success("Class deleted");
+    navigate("/owner-classes");
   };
 
   if (!authLoading && !isOwner) return <Navigate to="/" replace />;
@@ -156,7 +173,34 @@ const OwnerClassDetail = () => {
         ) : (
           <>
             <div className="mb-10">
-              <h1 className="font-display text-3xl text-foreground">{cls.name}</h1>
+              <div className="flex items-start justify-between gap-4">
+                {editing ? (
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-11 text-lg" aria-label="Class name" />
+                ) : (
+                  <h1 className="font-display text-3xl text-foreground">{cls.name}</h1>
+                )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label="Delete class">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {cls.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes the class, its enrolments and its register history. Students themselves are kept. This can't be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
 
               {editing ? (
                 <div className="mt-6 flex flex-wrap items-center gap-3">
