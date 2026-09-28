@@ -177,7 +177,7 @@ const Admin = () => {
             required
             style={{ ...inputStyle, marginBottom: 16 }}
           />
-          <button type="submit" style={{ padding: "8px 20px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: "pointer" }}>
+          <button type="submit" style={{ padding: "8px 20px", background: "hsl(var(--foreground))", color: "hsl(var(--primary-foreground))", border: "none", borderRadius: 2, cursor: "pointer" }}>
             Enter
           </button>
         </form>
@@ -206,7 +206,7 @@ const Admin = () => {
             style={{ ...inputStyle, marginBottom: 24 }} />
 
           <button type="submit" disabled={loading}
-            style={{ padding: "8px 24px", background: "#1A1A18", color: "#fff", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
+            style={{ padding: "8px 24px", background: "hsl(var(--foreground))", color: "hsl(var(--primary-foreground))", border: "none", borderRadius: 2, cursor: loading ? "wait" : "pointer" }}>
             {loading ? "Creating…" : "Create School"}
           </button>
         </form>
@@ -218,7 +218,7 @@ const Admin = () => {
       {/* Manual Webhook Check */}
       <section style={{ marginTop: 48 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Run Webhook Check</h2>
-        <p style={{ fontSize: 12, color: "#666", marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", marginBottom: 16 }}>
           Manually trigger the absence webhook check for a school. Leave student IDs empty to check all students.
         </p>
 
@@ -243,7 +243,7 @@ const Admin = () => {
           <button
             onClick={handleRunWebhookCheck}
             disabled={webhookRunning}
-            style={{ padding: "8px 24px", background: "#C4704B", color: "#fff", border: "none", borderRadius: 2, cursor: webhookRunning ? "wait" : "pointer" }}
+            style={{ padding: "8px 24px", background: "hsl(var(--risk))", color: "hsl(var(--primary-foreground))", border: "none", borderRadius: 2, cursor: webhookRunning ? "wait" : "pointer" }}
           >
             {webhookRunning ? "Running…" : "Run Webhook Check"}
           </button>
@@ -251,7 +251,7 @@ const Admin = () => {
           <button
             onClick={handleSeedTestData}
             disabled={seedRunning || !webhookSchoolId}
-            style={{ padding: "8px 24px", background: "#4B7BC4", color: "#fff", border: "none", borderRadius: 2, cursor: seedRunning ? "wait" : "pointer" }}
+            style={{ padding: "8px 24px", background: "#4B7BC4", color: "hsl(var(--primary-foreground))", border: "none", borderRadius: 2, cursor: seedRunning ? "wait" : "pointer" }}
           >
             {seedRunning ? "Seeding…" : "Seed Test Data"}
           </button>
@@ -272,8 +272,8 @@ const Admin = () => {
 
       {/* Delete School */}
       <section style={{ marginTop: 48, padding: 16, border: "1px solid #f0c4c4", borderRadius: 4, background: "#fdf5f5" }}>
-        <h2 style={{ fontSize: 16, marginBottom: 8, color: "#a33" }}>Delete School</h2>
-        <p style={{ fontSize: 12, color: "#666", marginBottom: 16, lineHeight: 1.5 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8, color: "hsl(var(--destructive))" }}>Delete School</h2>
+        <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", marginBottom: 16, lineHeight: 1.5 }}>
           Permanently deletes all data for a school (students, attendance, notes, enrollments, webhooks, invites, roles, profiles). Auth user accounts are <strong>not</strong> deleted.
         </p>
 
@@ -313,8 +313,8 @@ const Admin = () => {
           }
           style={{
             padding: "8px 24px",
-            background: "#a33",
-            color: "#fff",
+            background: "hsl(var(--destructive))",
+            color: "hsl(var(--primary-foreground))",
             border: "none",
             borderRadius: 2,
             cursor: deleting ? "wait" : "pointer",
@@ -334,11 +334,11 @@ const Admin = () => {
       {/* Update Admin Password */}
       <section style={{ marginTop: 48, padding: 16, border: "1px solid #e5e5e5", borderRadius: 4, background: "#fafafa" }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Update Admin Password</h2>
-        <p style={{ fontSize: 12, color: "#666", marginBottom: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", marginBottom: 12, lineHeight: 1.5 }}>
           The admin password is stored as the <code>ADMIN_SETUP_PASSWORD</code> secret. For security, it can only be changed from
           Project Settings → Secrets. The login field above only <em>checks</em> the password — it never writes to the secret.
         </p>
-        <p style={{ fontSize: 12, color: "#666", margin: 0 }}>
+        <p style={{ fontSize: 12, color: "hsl(var(--muted-foreground))", margin: 0 }}>
           To rotate: open Lovable Cloud settings, find <code>ADMIN_SETUP_PASSWORD</code>, and update its value there.
         </p>
       </section>
