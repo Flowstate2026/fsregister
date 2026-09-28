@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { deleteSchoolData, listSchoolUserIds } from "../_shared/delete-school-data.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,45 +61,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get all users in this school
-    const { data: schoolProfiles } = await adminClient
-      .from("profiles")
-      .select("user_id")
-      .eq("school_id", school_id);
+    // Collect user IDs before the data wipe removes their profiles
+    const userIds = await listSchoolUserIds(adminClient, school_id);
 
-    const userIds = (schoolProfiles || []).map((p) => p.user_id);
+    // Delete all school data (FK-safe cascade, shared with admin-delete-school)
+    await deleteSchoolData(adminClient, school_id);
 
-    // Delete all school data (order matters for FK constraints)
-    // 1. attendance_records (via students)
-    const { data: students } = await adminClient
-      .from("students")
-      .select("id")
-      .eq("school_id", school_id);
-    const studentIds = (students || []).map((s) => s.id);
-
-    if (studentIds.length > 0) {
-      await adminClient.from("attendance_records").delete().in("student_id", studentIds);
-      await adminClient.from("student_notes").delete().in("student_id", studentIds);
-      await adminClient.from("class_enrollments").delete().in("student_id", studentIds);
-    }
-
-    // 2. students, classes
-    await adminClient.from("students").delete().eq("school_id", school_id);
-    await adminClient.from("classes").delete().eq("school_id", school_id);
-
-    // 3. teacher_invites, user_roles, profiles
-    await adminClient.from("teacher_invites").delete().eq("school_id", school_id);
-    await adminClient.from("gdpr_consent_records").delete().eq("school_id", school_id);
-
-    for (const uid of userIds) {
-      await adminClient.from("user_roles").delete().eq("user_id", uid);
-      await adminClient.from("profiles").delete().eq("user_id", uid);
-    }
-
-    // 4. Delete the school
-    await adminClient.from("schools").delete().eq("id", school_id);
-
-    // 5. Delete all auth users
+    // Delete all auth users
     for (const uid of userIds) {
       await adminClient.auth.admin.deleteUser(uid);
     }

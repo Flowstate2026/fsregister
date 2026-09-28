@@ -77,25 +77,25 @@ export default function ParentNote() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#C4704B] border-t-transparent" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-risk border-t-transparent" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center space-y-4">
           {error.includes("expired") ? (
-            <Clock className="h-12 w-12 text-[#b0a494] mx-auto" />
+            <Clock className="h-12 w-12 text-muted-foreground mx-auto" />
           ) : (
-            <AlertCircle className="h-12 w-12 text-[#b0a494] mx-auto" />
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
           )}
-          <h1 className="text-xl font-medium text-[#3d2e1f]">
+          <h1 className="text-xl font-medium text-foreground">
             {error.includes("expired") ? "Link Expired" : "Something went wrong"}
           </h1>
-          <p className="text-sm text-[#8a7b6b]">{error}</p>
+          <p className="text-sm text-muted-foreground">{error}</p>
         </div>
       </div>
     );
@@ -104,7 +104,7 @@ export default function ParentNote() {
   if (!data) return null;
 
   return (
-    <div className="min-h-screen bg-[#faf8f5]">
+    <div className="min-h-screen bg-background">
       <div className="max-w-lg mx-auto px-6 py-12">
         {/* School header */}
         <div className="text-center mb-10">
@@ -115,42 +115,42 @@ export default function ParentNote() {
               className="h-14 mx-auto mb-4 object-contain"
             />
           )}
-          <h1 className="text-lg font-medium text-[#3d2e1f]">{data.school.name}</h1>
+          <h1 className="text-lg font-medium text-foreground">{data.school.name}</h1>
         </div>
 
         {/* Note card */}
-        <div className="bg-white rounded-xl p-8 shadow-sm mb-8">
+        <div className="bg-card rounded p-8 shadow-sm mb-8">
           <div className="mb-6">
-            <h2 className="text-xl font-medium text-[#3d2e1f] mb-1">
+            <h2 className="text-xl font-medium text-foreground mb-1">
               A note about {data.student.firstName}
             </h2>
-            <p className="text-xs text-[#8a7b6b] tracking-wide">
+            <p className="text-xs text-muted-foreground tracking-wide">
               {data.className && <>{data.className} · </>}
               {format(new Date(data.note.date), "d MMMM yyyy")}
             </p>
           </div>
 
           <div className="mb-6">
-            <p className="text-[11px] uppercase tracking-[0.15em] text-[#b0a494] mb-2">
+            <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground mb-2">
               From {data.teacher.name}
             </p>
-            <p className="text-[15px] text-[#3d2e1f] leading-relaxed font-light">
+            <p className="text-[15px] text-foreground leading-relaxed font-light">
               {data.note.text}
             </p>
           </div>
 
           {/* Previous replies */}
           {data.replies.length > 0 && (
-            <div className="border-t border-[#f0ebe4] pt-6 mb-6">
-              <p className="text-[11px] uppercase tracking-[0.15em] text-[#b0a494] mb-4">
+            <div className="border-t border-border pt-6 mb-6">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground mb-4">
                 Replies
               </p>
               {data.replies.map((reply) => (
                 <div key={reply.id} className="mb-4 last:mb-0">
-                  <p className="text-sm text-[#3d2e1f] leading-relaxed font-light">
+                  <p className="text-sm text-foreground leading-relaxed font-light">
                     {reply.reply_text}
                   </p>
-                  <p className="mt-1 text-[10px] text-[#b0a494]">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     {reply.parent_name || "Parent"} · {format(new Date(reply.created_at), "d MMM yyyy")}
                   </p>
                 </div>
@@ -160,35 +160,35 @@ export default function ParentNote() {
 
           {/* Reply form */}
           {sent ? (
-            <div className="border-t border-[#f0ebe4] pt-6 text-center">
+            <div className="border-t border-border pt-6 text-center">
               <CheckCircle className="h-8 w-8 text-[#6b8e6b] mx-auto mb-3" />
-              <p className="text-sm font-medium text-[#3d2e1f]">Reply sent!</p>
-              <p className="text-xs text-[#8a7b6b] mt-1">
+              <p className="text-sm font-medium text-foreground">Reply sent!</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 {data.teacher.name} will receive your message.
               </p>
             </div>
           ) : (
-            <div className="border-t border-[#f0ebe4] pt-6 space-y-4">
-              <p className="text-[11px] uppercase tracking-[0.15em] text-[#b0a494]">
+            <div className="border-t border-border pt-6 space-y-4">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                 Reply to {data.teacher.name}
               </p>
               <Input
                 placeholder="Your name (optional)"
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
-                className="border-[#e8e0d6] bg-[#faf8f5] text-[#3d2e1f] placeholder:text-[#b0a494] focus-visible:ring-[#C4704B]/30"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring/30"
               />
               <Textarea
                 placeholder="Write your reply here…"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 rows={3}
-                className="border-[#e8e0d6] bg-[#faf8f5] text-[#3d2e1f] placeholder:text-[#b0a494] focus-visible:ring-[#C4704B]/30 resize-none"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring/30 resize-none"
               />
               <Button
                 onClick={handleReply}
                 disabled={!replyText.trim() || sending}
-                className="bg-[#C4704B] hover:bg-[#a85d3d] text-white"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 <Send className="h-4 w-4 mr-2" />
                 {sending ? "Sending…" : "Send Reply"}
@@ -197,7 +197,7 @@ export default function ParentNote() {
           )}
         </div>
 
-        <p className="text-center text-[10px] text-[#b0a494]">
+        <p className="text-center text-[10px] text-muted-foreground">
           This is a private message from {data.school.name}. Please do not share this link.
         </p>
       </div>

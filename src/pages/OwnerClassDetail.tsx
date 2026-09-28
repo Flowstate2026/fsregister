@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getDayName, formatTime, calculateAttendancePercentage } from "@/lib/student-utils";
+import type { Tables } from "@/integrations/supabase/types";
+import type { StudentWithDetails } from "@/hooks/useStudentWithDetails";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, CalendarDays, Pencil, Save, X, User } from "lucide-react";
 
@@ -35,15 +37,20 @@ interface ClassData {
   school_id: string;
 }
 
+type AttendanceRecord = Tables<"attendance_records">;
+type StudentNote = Tables<"student_notes">;
+
 interface EnrolledStudent {
   id: string;
   first_name: string;
   last_name: string;
   join_date: string;
   bulk_imported: boolean;
-  attendance: any[];
-  notes: any[];
+  attendance: AttendanceRecord[];
+  notes: (StudentNote & { author_name: string | null })[];
 }
+
+type RawStudent = Omit<EnrolledStudent, "attendance" | "notes"> & { archived: boolean };
 
 const OwnerClassDetail = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -82,9 +89,9 @@ const OwnerClassDetail = () => {
       setEditDay(classData.day_of_week);
       setEditTime(formatT(classData.time_of_day));
     }
-    const list = ((enrollments || [])
-      .map((e: any) => e.students)
-      .filter((s: any) => s && !s.archived) as EnrolledStudent[])
+    const list = (enrollments || [])
+      .map((e) => e.students as unknown as RawStudent | null)
+      .filter((s): s is RawStudent => !!s && !s.archived)
       .sort((a, b) => a.first_name.localeCompare(b.first_name));
 
     if (list.length > 0) {
@@ -219,7 +226,7 @@ const OwnerClassDetail = () => {
                           </span>
                         </div>
                         <StudentIndicators
-                          student={s as any}
+                          student={s as unknown as StudentWithDetails}
                           attendancePercent={percent}
                         />
                       </button>

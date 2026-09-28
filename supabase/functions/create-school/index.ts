@@ -15,13 +15,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { admin_password, school_name, admin_email, admin_user_password } = body;
 
-    console.log("create-school invoked", {
-      has_password: !!admin_password,
-      school_name,
-      admin_email,
-      has_user_password: !!admin_user_password,
-    });
-
     // Validate admin password
     const expectedPassword = Deno.env.get("ADMIN_SETUP_PASSWORD");
     if (!expectedPassword) {
@@ -155,7 +148,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log("create-school success", { school_id: school.id, user_id: userId });
 
     return new Response(
       JSON.stringify({

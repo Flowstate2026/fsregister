@@ -6,6 +6,23 @@ import AppLayout from "@/components/AppLayout";
 import { formatDistanceToNow } from "date-fns";
 import { StickyNote, UserPlus, UserMinus } from "lucide-react";
 
+type NoteRow = {
+  id: string;
+  note_text: string;
+  created_at: string;
+  author_id: string;
+  student_id: string;
+};
+
+type ActivityRow = {
+  id: string;
+  created_at: string;
+  teacher_id: string;
+  student_id: string;
+  class_id: string;
+  action: "enrolled" | "unenrolled";
+};
+
 type FeedItem =
   | {
       kind: "note";
@@ -54,7 +71,7 @@ const OwnerActivity = () => {
               .in("student_id", studentIds)
               .order("created_at", { ascending: false })
               .limit(200)
-          : Promise.resolve({ data: [], error: null } as any),
+          : Promise.resolve({ data: [] as NoteRow[], error: null }),
         supabase
           .from("activity_log")
           .select("id, created_at, teacher_id, student_id, class_id, action")
@@ -72,13 +89,16 @@ const OwnerActivity = () => {
       if (classesRes.error) throw classesRes.error;
 
       const classMap = new Map(
-        (classesRes.data ?? []).map((c: any) => [c.id, c.name as string])
+        (classesRes.data ?? []).map((c) => [c.id, c.name as string])
       );
+
+      const notes = (notesRes.data ?? []) as NoteRow[];
+      const activities = (activityRes.data ?? []) as ActivityRow[];
 
       const teacherIds = Array.from(
         new Set([
-          ...(notesRes.data ?? []).map((n: any) => n.author_id),
-          ...(activityRes.data ?? []).map((a: any) => a.teacher_id),
+          ...notes.map((n) => n.author_id),
+          ...activities.map((a) => a.teacher_id),
         ])
       );
 
@@ -91,7 +111,7 @@ const OwnerActivity = () => {
         nameMap = new Map((profiles ?? []).map((p) => [p.user_id, p.full_name]));
       }
 
-      const noteItems: FeedItem[] = (notesRes.data ?? []).map((n: any) => ({
+      const noteItems: FeedItem[] = notes.map((n) => ({
         kind: "note",
         id: `note-${n.id}`,
         createdAt: n.created_at,
@@ -101,7 +121,7 @@ const OwnerActivity = () => {
         noteText: n.note_text,
       }));
 
-      const activityItems: FeedItem[] = (activityRes.data ?? []).map((a: any) => ({
+      const activityItems: FeedItem[] = activities.map((a) => ({
         kind: "activity",
         id: `act-${a.id}`,
         createdAt: a.created_at,
