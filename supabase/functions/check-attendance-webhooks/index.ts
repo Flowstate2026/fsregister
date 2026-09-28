@@ -81,7 +81,6 @@ Deno.serve(async (req) => {
     }
 
     const webhookUrl = webhookRows[0].webhook_url;
-    console.log(`Checking ${student_ids.length} students for school ${school_id}, webhook: ${webhookUrl}`);
 
     const triggeredStudents: { id: string; first_name: string; last_name: string; absent_dates: string[] }[] = [];
 
@@ -106,7 +105,6 @@ Deno.serve(async (req) => {
         .order("date", { ascending: false });
 
       if (!records?.length) {
-        console.log(`Student ${student.first_name} ${student.last_name}: no records in last 30 days`);
         continue;
       }
 
@@ -139,14 +137,12 @@ Deno.serve(async (req) => {
         .sort()
         .reverse();
 
-      console.log(`Student ${student.first_name} ${student.last_name}: ${Object.keys(byDate).length} dates, ${fullyAbsentDates.length} fully absent dates: ${fullyAbsentDates.join(", ")}`);
 
       if (fullyAbsentDates.length >= 2) {
         // Check if the two most recent dates overall are both fully absent
         const allDates = Object.keys(byDate).sort().reverse();
         const mostRecentTwoAbsent = allDates.slice(0, 2).every((d) => fullyAbsentDates.includes(d));
 
-        console.log(`  Most recent 2 dates: ${allDates.slice(0, 2).join(", ")} — both absent: ${mostRecentTwoAbsent}`);
 
         if (mostRecentTwoAbsent) {
           triggeredStudents.push({
@@ -159,7 +155,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Triggering webhook for ${triggeredStudents.length} students`);
 
     for (const s of triggeredStudents) {
       try {
@@ -175,7 +170,6 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString(),
           }),
         });
-        console.log(`Webhook fired for ${s.first_name} ${s.last_name}: ${resp.status}`);
       } catch (err) {
         console.error(`Failed to fire webhook for student ${s.id}:`, err);
       }

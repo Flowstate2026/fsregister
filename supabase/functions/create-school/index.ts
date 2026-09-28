@@ -15,7 +15,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { admin_password, school_name, admin_email, admin_user_password } = body;
 
-    console.log("create-school invoked", {
       has_password: !!admin_password,
       school_name,
       admin_email,
@@ -155,7 +154,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log("create-school success", { school_id: school.id, user_id: userId });
 
     return new Response(
       JSON.stringify({

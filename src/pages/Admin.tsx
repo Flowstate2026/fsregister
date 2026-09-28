@@ -151,7 +151,7 @@ const Admin = () => {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: 8, border: "1px solid #ccc", borderRadius: 4, fontSize: 13,
+    width: "100%", padding: 8, border: "1px solid hsl(var(--border))", borderRadius: 4, fontSize: 13,
   };
 
   const handleLogin = (e: React.FormEvent) => {
