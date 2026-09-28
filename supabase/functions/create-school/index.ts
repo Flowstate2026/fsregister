@@ -15,12 +15,6 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { admin_password, school_name, admin_email, admin_user_password } = body;
 
-      has_password: !!admin_password,
-      school_name,
-      admin_email,
-      has_user_password: !!admin_user_password,
-    });
-
     // Validate admin password
     const expectedPassword = Deno.env.get("ADMIN_SETUP_PASSWORD");
     if (!expectedPassword) {
