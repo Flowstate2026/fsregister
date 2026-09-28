@@ -24,11 +24,7 @@ export default function AcceptInvite() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [invite, setInvite] = useState<{
-    email: string;
-    full_name: string;
-    role: string;
-  } | null>(null);
+  const [invite, setInvite] = useState<InvitePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,12 +37,12 @@ export default function AcceptInvite() {
     }
     (async () => {
       try {
-        const { data, error: fnErr } = await supabase.functions.invoke("accept-invite", {
+        const { data, error: fnErr } = await supabase.functions.invoke<AcceptInviteResponse>("accept-invite", {
           body: { token, preview: true },
         });
         if (fnErr) throw fnErr;
-        if ((data as any)?.error) throw new Error((data as any).error);
-        setInvite(data as any);
+        if (data?.error) throw new Error(data.error);
+        setInvite(data as InvitePreview);
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -67,13 +63,13 @@ export default function AcceptInvite() {
     }
     setSubmitting(true);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("accept-invite", {
+      const { data, error: fnErr } = await supabase.functions.invoke<AcceptInviteResponse>("accept-invite", {
         body: { token, password },
       });
       if (fnErr) throw fnErr;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      if (data?.error) throw new Error(data.error);
 
-      const email = (data as any)?.email || invite?.email;
+      const email = data?.email || invite?.email;
       if (email) {
         const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
         if (signInErr) throw signInErr;
