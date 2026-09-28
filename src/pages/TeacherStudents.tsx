@@ -111,8 +111,12 @@ const TeacherStudents = () => {
                   onClick={() => navigate(`/student/${student.id}`)}
                   className="flex w-full items-center justify-between bg-card px-5 py-4 text-left transition-all hover:bg-secondary/30 active:scale-[0.995]"
                 >
-                  <span className="text-sm font-light text-foreground">
+                  <span className="flex items-center gap-2 text-sm font-light text-foreground">
                     {student.first_name} {student.last_name}
+                    <StudentIndicators
+                      student={student}
+                      attendancePercent={percent}
+                    />
                   </span>
                   <StudentIndicators
                     student={student}
