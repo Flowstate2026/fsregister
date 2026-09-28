@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+interface InvitePreview {
+  email: string;
+  full_name: string;
+  role: string;
+}
+
+interface AcceptInviteResponse extends Partial<InvitePreview> {
+  error?: string;
+  success?: boolean;
+}
+
 export default function AcceptInvite() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
