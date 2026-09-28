@@ -118,10 +118,6 @@ const TeacherStudents = () => {
                       attendancePercent={percent}
                     />
                   </span>
-                  <StudentIndicators
-                    student={student}
-                    attendancePercent={percent}
-                  />
                 </button>
               );
             })}
