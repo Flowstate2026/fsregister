@@ -226,7 +226,7 @@ const OwnerClassDetail = () => {
                           </span>
                         </div>
                         <StudentIndicators
-                          student={s as any}
+                          student={s as unknown as StudentWithDetails}
                           attendancePercent={percent}
                         />
                       </button>
