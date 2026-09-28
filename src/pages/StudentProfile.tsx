@@ -223,10 +223,6 @@ const StudentProfile = () => {
               </button>
             )}
           </div>
-          <StudentIndicators
-            student={studentData}
-            attendancePercent={percent}
-          />
         </div>
 
         {/* Enrolled classes */}
