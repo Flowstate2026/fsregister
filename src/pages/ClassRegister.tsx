@@ -274,9 +274,9 @@ const ClassRegister = () => {
                       >
                         {student.first_name} {student.last_name}
                       </span>
+                      <StudentIndicators student={student} attendancePercent={percent} />
                     </div>
                     <div className="flex items-center gap-3">
-                      <StudentIndicators student={student} attendancePercent={percent} />
                       <button
                         onClick={() =>
                           setRemoveTarget({

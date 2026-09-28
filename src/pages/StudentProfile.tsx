@@ -182,6 +182,12 @@ const StudentProfile = () => {
             <h2 className="font-display text-3xl text-foreground">
               {studentData.first_name} {studentData.last_name}
             </h2>
+            <div className="mt-2">
+              <StudentIndicators
+                student={studentData}
+                attendancePercent={percent}
+              />
+            </div>
             <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
               Joined {format(parseISO(studentData.join_date), "d MMM yyyy")}
             </p>
@@ -217,10 +223,6 @@ const StudentProfile = () => {
               </button>
             )}
           </div>
-          <StudentIndicators
-            student={studentData}
-            attendancePercent={percent}
-          />
         </div>
 
         {/* Enrolled classes */}

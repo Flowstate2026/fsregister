@@ -268,11 +268,11 @@ const OwnerClassDetail = () => {
                           <span className="text-sm text-foreground">
                             {s.first_name} {s.last_name}
                           </span>
+                          <StudentIndicators
+                            student={s as unknown as StudentWithDetails}
+                            attendancePercent={percent}
+                          />
                         </div>
-                        <StudentIndicators
-                          student={s as unknown as StudentWithDetails}
-                          attendancePercent={percent}
-                        />
                       </button>
                     );
                   })}
