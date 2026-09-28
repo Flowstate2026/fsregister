@@ -10,8 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, School, Users, GraduationCap, CheckCircle2, ArrowRight, ArrowLeft, SkipForward, ShieldCheck } from "lucide-react";
-import { parseCsvDate } from "@/lib/csv-date";
-import { parseCsvText, splitClassNames } from "@/lib/csv-parse";
+import {
+  downloadStudentTemplate,
+  readStudentsCsvFile,
+  parseStudentClasses,
+  resolveClassMap,
+  buildStudentInsertRows,
+  type CsvStudentRow,
+} from "@/lib/csv-import";
 
 const STEPS = [
   { label: "GDPR", icon: ShieldCheck },
@@ -48,10 +54,7 @@ export default function Onboarding() {
 
   // Step 4 state
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvStudents, setCsvStudents] = useState<{
-    first_name: string; last_name: string; date_of_birth?: string;
-    join_date?: string; class_name?: string; parent_email?: string;
-  }[]>([]);
+  const [csvStudents, setCsvStudents] = useState<CsvStudentRow[]>([]);
 
   const schoolId = profile?.school_id;
   const progress = ((step + 1) / STEPS.length) * 100;
